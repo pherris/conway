@@ -6,6 +6,7 @@ export default class Point {
     private x: bigint;
     private y: bigint;
     public selected: boolean;
+    private _neighborCache: Array<Point> = []
 
     constructor(x: bigint, y: bigint, selected: boolean) {
         this.x = x;
@@ -15,6 +16,10 @@ export default class Point {
 
     get coordinates(): bigint[] {
         return [this.x, this.y]
+    }
+
+    get neighborCache(): Array<Point> {
+        return this._neighborCache
     }
 
     neighbors(): bigint[][] {

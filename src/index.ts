@@ -10,9 +10,11 @@ const frameContainer = document.getElementById('frame')
 const inputWrapper = document.getElementById('input')
 const initialState = <HTMLInputElement>document.getElementById('initial-state')
 const currentState = <HTMLInputElement>document.getElementById('meta')
+const runTime = <HTMLInputElement>document.getElementById('run-time')
 let running: boolean = false
 let frameCount: number = 0
 const cachedPoints = new CachedPoints()
+let started: number = 0
 
 function addPoint(coordinates: bigint[], selected: boolean): void {
     const existingCachedItem = cachedPoints.find(coordinates)
@@ -48,19 +50,28 @@ function syncUi(visibleAddedPoints: Array<Point>, visibleRemovedPoints: Array<Po
             return accumulator
         }, [])
 
-    currentState.querySelector('pre').innerText = JSON.stringify(selectedPoints, null, 2)
     frameContainer.innerText = (frameCount++).toString()
+    runTime.innerText = (Date.now() - started).toString()
+
+    // let the user see how long things took after every 500 frames
+    if (frameCount % 500 === 0) {
+        started = 0
+        runTime.innerText = `${runTime.innerText}ms. ${cachedPoints.cached.length} items in cache`
+        currentState.querySelector('pre').innerText = JSON.stringify(selectedPoints, null, 2)
+    }
 }
 
 function perform() {
-    console.log(`Cache contains ${cachedPoints.cached.length} items`)
-    if (!running) return
+    // console.log(`Cache contains ${cachedPoints.cached.length} items`)
+    if (started === 0) {
+        return
+    }
 
     const added = []
     const removed = []
     const surviving = []
-    cachedPoints.cached.forEach(coordinate => {
-        const point = cachedPoints.find(coordinate)
+
+    cachedPoints.cache.forEach(point => {
         const selectedSiblings: number = cachedPoints.countOfSelectedSiblings(point)
 
         if (point.selected && (selectedSiblings < 2 || selectedSiblings > 3)) {
@@ -78,9 +89,10 @@ function perform() {
         }
     })
 
-    // update the cache
     removed.forEach(point => cachedPoints.remove(point))
+
     added.concat(surviving).forEach(point => (point.selected = true) && cachedPoints.addOrUpdate(point))
+
     cachedPoints.cleanRemoved()
 
     syncUi(
@@ -96,6 +108,7 @@ function perform() {
             return x < DOM.COLS && y < DOM.ROWS
         })
     )
+
     setTimeout(perform, 0)
 }
 
@@ -107,13 +120,13 @@ inputWrapper && inputWrapper.addEventListener('click', (e) => {
 
 runButton && runButton.addEventListener('click', () => {
     // allow run button to start and stop
-    if (running) {
+    if (started > 0) {
         runButton.innerText = 'Restart'
-        running = false
+        started = 0
         return
     }
 
-    running = true
+    started = Date.now()
     runButton.innerText = 'Stop'
     setTimeout(perform, 0)
 })
@@ -122,6 +135,7 @@ initialState && initialState.addEventListener('change', () => {
     const newState = JSON.parse(initialState.value)
     newState.forEach(coordinates => {
         const cell = <HTMLElement>getCellFromCoordinates(coordinates[0], coordinates[1])
+        if (!cell) return
         cell.click()
     })
 })

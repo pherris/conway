@@ -127,7 +127,8 @@ var DOM = {
 exports.DOM = DOM;
 
 function createGrid(inputWrapper) {
-  // clean up just in case
+  if (!inputWrapper) return; // clean up just in case
+
   inputWrapper.childNodes.forEach(function (node) {
     return node.remove();
   });
@@ -209,6 +210,7 @@ function () {
 
     this.MIN = BigInt(0);
     this.MAX = BigInt(18446744073709551616);
+    this._neighborCache = [];
     this.x = x;
     this.y = y;
     this.selected = selected;
@@ -220,18 +222,18 @@ function () {
       return [this.topLeftNeighbor(), this.topNeighbor(), this.topRightNeighbor(), this.leftNeighbor(), this.rightNeighbor(), this.bottomLeftNeighbor(), this.bottomNeighbor(), this.bottomRightNeighbor()];
     }
   }, {
-    key: "topLeftNeighbor",
-    value: function topLeftNeighbor() {
+    key: "bottomLeftNeighbor",
+    value: function bottomLeftNeighbor() {
       return [this.nextLowerCoordinate(this.x), this.nextHigherCoordinate(this.y)];
     }
   }, {
-    key: "topNeighbor",
-    value: function topNeighbor() {
+    key: "bottomNeighbor",
+    value: function bottomNeighbor() {
       return [this.x, this.nextHigherCoordinate(this.y)];
     }
   }, {
-    key: "topRightNeighbor",
-    value: function topRightNeighbor() {
+    key: "bottomRightNeighbor",
+    value: function bottomRightNeighbor() {
       return [this.nextHigherCoordinate(this.x), this.nextHigherCoordinate(this.y)];
     }
   }, {
@@ -245,18 +247,18 @@ function () {
       return [this.nextHigherCoordinate(this.x), this.y];
     }
   }, {
-    key: "bottomLeftNeighbor",
-    value: function bottomLeftNeighbor() {
+    key: "topLeftNeighbor",
+    value: function topLeftNeighbor() {
       return [this.nextLowerCoordinate(this.x), this.nextLowerCoordinate(this.y)];
     }
   }, {
-    key: "bottomNeighbor",
-    value: function bottomNeighbor() {
+    key: "topNeighbor",
+    value: function topNeighbor() {
       return [this.x, this.nextLowerCoordinate(this.y)];
     }
   }, {
-    key: "bottomRightNeighbor",
-    value: function bottomRightNeighbor() {
+    key: "topRightNeighbor",
+    value: function topRightNeighbor() {
       return [this.nextHigherCoordinate(this.x), this.nextLowerCoordinate(this.y)];
     }
   }, {
@@ -274,13 +276,18 @@ function () {
     get: function get() {
       return [this.x, this.y];
     }
+  }, {
+    key: "neighborCache",
+    get: function get() {
+      return this._neighborCache;
+    }
   }]);
 
   return Point;
 }();
 
 exports.default = Point;
-},{}],"src/active_points.ts":[function(require,module,exports) {
+},{}],"src/cached_points.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -306,11 +313,11 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
-var ActivePoints =
+var CachedPoints =
 /*#__PURE__*/
 function () {
-  function ActivePoints() {
-    _classCallCheck(this, ActivePoints);
+  function CachedPoints() {
+    _classCallCheck(this, CachedPoints);
 
     // We're going to use an array to hold the active points and use the slower `find` approach to pull back each item we
     // are interested in.  The preference would be to use a hash where the key was an array of the `x` and `y` coordinates
@@ -322,7 +329,7 @@ function () {
     this._removed = [];
   }
 
-  _createClass(ActivePoints, [{
+  _createClass(CachedPoints, [{
     key: "cleanRemoved",
     value: function cleanRemoved() {
       this._removed = [];
@@ -333,8 +340,12 @@ function () {
     value: function addOrUpdate(point) {
       var _this = this;
 
-      if (!this.find(point.coordinates)) {
+      var existingPoint = this.find(point.coordinates);
+
+      if (!existingPoint) {
         this.cache.push(point);
+      } else {
+        existingPoint.selected = point.selected;
       }
 
       point.neighbors().forEach(function (neighboringCoordinates) {
@@ -374,8 +385,8 @@ function () {
     value: function countOfSelectedSiblings(point) {
       var _this2 = this;
 
-      var cachedPoint = this.cache[this.findIndexInCache(point.coordinates)];
-      return cachedPoint.neighbors().filter(function (coordinates) {
+      // for performance we're going to rely on this guy being in the cache for sure
+      return point.neighbors().filter(function (coordinates) {
         var neighboringIndex = _this2.findIndexInCache(coordinates);
 
         return neighboringIndex > -1 && _this2.cache[neighboringIndex].selected;
@@ -412,10 +423,10 @@ function () {
     }
   }]);
 
-  return ActivePoints;
+  return CachedPoints;
 }();
 
-exports.default = ActivePoints;
+exports.default = CachedPoints;
 },{"./point":"src/point.ts"}],"../../.config/yarn/global/node_modules/parcel-bundler/src/builtins/bundle-url.js":[function(require,module,exports) {
 var bundleURL = null;
 
@@ -495,7 +506,7 @@ var _dom_helpers = require("./dom_helpers");
 
 var _point = _interopRequireDefault(require("./point"));
 
-var _active_points = _interopRequireDefault(require("./active_points"));
+var _cached_points = _interopRequireDefault(require("./cached_points"));
 
 require("./style.scss");
 
@@ -506,12 +517,14 @@ var frameContainer = document.getElementById('frame');
 var inputWrapper = document.getElementById('input');
 var initialState = document.getElementById('initial-state');
 var currentState = document.getElementById('meta');
+var runTime = document.getElementById('run-time');
 var running = false;
 var frameCount = 0;
-var activePoints = new _active_points.default();
+var cachedPoints = new _cached_points.default();
+var started = 0;
 
 function addPoint(coordinates, selected) {
-  var existingCachedItem = activePoints.find(coordinates);
+  var existingCachedItem = cachedPoints.find(coordinates);
   var point;
 
   if (existingCachedItem) {
@@ -521,7 +534,7 @@ function addPoint(coordinates, selected) {
     point = new _point.default(coordinates[0], coordinates[1], selected);
   }
 
-  activePoints.addOrUpdate(point);
+  cachedPoints.addOrUpdate(point);
 } // This method determines if the UI contains any of the active points and displays them, it also serializes the cache into the textarea
 
 
@@ -534,25 +547,33 @@ function syncUi(visibleAddedPoints, visibleRemovedPoints) {
     var cell = (0, _dom_helpers.getCellFromCoordinates)(point.coordinates[0].toString(), point.coordinates[1].toString());
     (0, _dom_helpers.deselectCell)(cell);
   });
-  var selectedPoints = activePoints.cached.filter(function (coordinates) {
-    return activePoints.find(coordinates).selected;
+  var selectedPoints = cachedPoints.cached.filter(function (coordinates) {
+    return cachedPoints.find(coordinates).selected;
   }).reduce(function (accumulator, coordinates) {
     accumulator.push([coordinates[0].toString(), coordinates[1].toString()]);
     return accumulator;
   }, []);
-  currentState.querySelector('pre').innerText = JSON.stringify(selectedPoints, null, 2);
   frameContainer.innerText = (frameCount++).toString();
+  runTime.innerText = (Date.now() - started).toString(); // let the user see how long things took after every 500 frames
+
+  if (frameCount % 500 === 0) {
+    started = 0;
+    runTime.innerText = "".concat(runTime.innerText, "ms. ").concat(cachedPoints.cached.length, " items in cache");
+    currentState.querySelector('pre').innerText = JSON.stringify(selectedPoints, null, 2);
+  }
 }
 
 function perform() {
-  console.log("Cache contains ".concat(activePoints.cached.length, " items"));
-  if (!running) return;
+  // console.log(`Cache contains ${cachedPoints.cached.length} items`)
+  if (started === 0) {
+    return;
+  }
+
   var added = [];
   var removed = [];
   var surviving = [];
-  activePoints.cached.forEach(function (coordinate) {
-    var point = activePoints.find(coordinate);
-    var selectedSiblings = activePoints.countOfSelectedSiblings(point);
+  cachedPoints.cache.forEach(function (point) {
+    var selectedSiblings = cachedPoints.countOfSelectedSiblings(point);
 
     if (point.selected && (selectedSiblings < 2 || selectedSiblings > 3)) {
       removed.push(point);
@@ -567,15 +588,14 @@ function perform() {
     if (point.selected && (selectedSiblings == 2 || selectedSiblings == 3)) {
       surviving.push(point);
     }
-  }); // update the cache
-
+  });
   removed.forEach(function (point) {
-    return activePoints.remove(point);
+    return cachedPoints.remove(point);
   });
   added.concat(surviving).forEach(function (point) {
-    return (point.selected = true) && activePoints.addOrUpdate(point);
+    return (point.selected = true) && cachedPoints.addOrUpdate(point);
   });
-  activePoints.cleanRemoved();
+  cachedPoints.cleanRemoved();
   syncUi(added.filter(function (point) {
     var x = point.coordinates[0];
     var y = point.coordinates[1];
@@ -589,31 +609,32 @@ function perform() {
 } // Add the ability to click cells to toggle them on and off
 
 
-inputWrapper.addEventListener('click', function (e) {
+inputWrapper && inputWrapper.addEventListener('click', function (e) {
   var cell = e.srcElement;
   addPoint((0, _dom_helpers.toggleSelected)(cell), (0, _dom_helpers.cellIsSelected)(cell));
 });
-runButton.addEventListener('click', function () {
+runButton && runButton.addEventListener('click', function () {
   // allow run button to start and stop
-  if (running) {
+  if (started > 0) {
     runButton.innerText = 'Restart';
-    running = false;
+    started = 0;
     return;
   }
 
-  running = true;
+  started = Date.now();
   runButton.innerText = 'Stop';
   setTimeout(perform, 0);
 });
-initialState.addEventListener('change', function () {
+initialState && initialState.addEventListener('change', function () {
   var newState = JSON.parse(initialState.value);
   newState.forEach(function (coordinates) {
     var cell = (0, _dom_helpers.getCellFromCoordinates)(coordinates[0], coordinates[1]);
+    if (!cell) return;
     cell.click();
   });
 });
 (0, _dom_helpers.createGrid)(inputWrapper);
-},{"./dom_helpers":"src/dom_helpers.ts","./point":"src/point.ts","./active_points":"src/active_points.ts","./style.scss":"src/style.scss"}],"../../.config/yarn/global/node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"./dom_helpers":"src/dom_helpers.ts","./point":"src/point.ts","./cached_points":"src/cached_points.ts","./style.scss":"src/style.scss"}],"../../.config/yarn/global/node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -640,7 +661,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58709" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "62712" + '/');
 
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);

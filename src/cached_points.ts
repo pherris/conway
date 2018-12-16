@@ -65,8 +65,8 @@ export default class CachedPoints {
 
     // find the siblings of this point and return the total number that are selected
     public countOfSelectedSiblings(point: Point): number {
-        const cachedPoint = this.cache[this.findIndexInCache(point.coordinates)]
-        return cachedPoint.neighbors().filter(coordinates => {
+        // for performance we're going to rely on this guy being in the cache for sure
+        return point.neighbors().filter(coordinates => {
             const neighboringIndex = this.findIndexInCache(coordinates)
             return neighboringIndex > -1 && this.cache[neighboringIndex].selected
         }).length
