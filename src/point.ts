@@ -1,4 +1,4 @@
-// This point represents
+// represents a point in the grid which is aware of the coordinates of each of its neighbors
 export class Point {
     private x: bigint;
     private y: bigint;
@@ -12,11 +12,48 @@ export class Point {
         this.selected = selected;
     }
 
-    neighbors(): number[][] {
-        return [[1, 3]]
+    neighbors(): bigint[][] {
+        return [
+            this.topLeftNeighbor(),
+            this.topNeighbor(),
+            this.topRightNeighbor(),
+            this.leftNeighbor(),
+            this.rightNeighbor(),
+            this.bottomLeftNeighbor(),
+            this.bottomNeighbor(),
+            this.bottomRightNeighbor()
+        ]
     }
 
     private topLeftNeighbor(): Array<bigint> {
+        return [this.nextLowerCoordinate(this.x), this.nextHigherCoordinate(this.y)]
+    }
+
+    private topNeighbor(): Array<bigint> {
+        return [this.x, this.nextHigherCoordinate(this.y)]
+    }
+
+    private topRightNeighbor(): Array<bigint> {
+        return [this.nextHigherCoordinate(this.x), this.nextHigherCoordinate(this.y)]
+    }
+
+    private leftNeighbor(): Array<bigint> {
+        return [this.nextLowerCoordinate(this.x), this.y]
+    }
+
+    private rightNeighbor(): Array<bigint> {
+        return [this.nextHigherCoordinate(this.x), this.y]
+    }
+
+    private bottomLeftNeighbor(): Array<bigint> {
+        return [this.nextLowerCoordinate(this.x), this.nextLowerCoordinate(this.y)]
+    }
+
+    private bottomNeighbor(): Array<bigint> {
+        return [this.x, this.nextLowerCoordinate(this.y)]
+    }
+
+    private bottomRightNeighbor(): Array<bigint> {
         return [this.nextHigherCoordinate(this.x), this.nextLowerCoordinate(this.y)]
     }
 

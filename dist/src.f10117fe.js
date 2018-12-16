@@ -107,25 +107,117 @@ parcelRequire = (function (modules, cache, entry, globalName) {
 })({"src/message.ts":[function(require,module,exports) {
 "use strict";
 
-exports.__esModule = true; // message.ts
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+// message.ts
+var _default = 'Hello, world';
+exports.default = _default;
+},{}],"../../.config/yarn/global/node_modules/parcel-bundler/src/builtins/bundle-url.js":[function(require,module,exports) {
+var bundleURL = null;
 
-exports["default"] = 'Hello, world';
-},{}],"src/index.ts":[function(require,module,exports) {
+function getBundleURLCached() {
+  if (!bundleURL) {
+    bundleURL = getBundleURL();
+  }
+
+  return bundleURL;
+}
+
+function getBundleURL() {
+  // Attempt to find the URL of the current script and use that as the base URL
+  try {
+    throw new Error();
+  } catch (err) {
+    var matches = ('' + err.stack).match(/(https?|file|ftp):\/\/[^)\n]+/g);
+
+    if (matches) {
+      return getBaseURL(matches[0]);
+    }
+  }
+
+  return '/';
+}
+
+function getBaseURL(url) {
+  return ('' + url).replace(/^((?:https?|file|ftp):\/\/.+)\/[^/]+$/, '$1') + '/';
+}
+
+exports.getBundleURL = getBundleURLCached;
+exports.getBaseURL = getBaseURL;
+},{}],"../../.config/yarn/global/node_modules/parcel-bundler/src/builtins/css-loader.js":[function(require,module,exports) {
+var bundle = require('./bundle-url');
+
+function updateLink(link) {
+  var newLink = link.cloneNode();
+
+  newLink.onload = function () {
+    link.remove();
+  };
+
+  newLink.href = link.href.split('?')[0] + '?' + Date.now();
+  link.parentNode.insertBefore(newLink, link.nextSibling);
+}
+
+var cssTimeout = null;
+
+function reloadCSS() {
+  if (cssTimeout) {
+    return;
+  }
+
+  cssTimeout = setTimeout(function () {
+    var links = document.querySelectorAll('link[rel="stylesheet"]');
+
+    for (var i = 0; i < links.length; i++) {
+      if (bundle.getBaseURL(links[i].href) === bundle.getBundleURL()) {
+        updateLink(links[i]);
+      }
+    }
+
+    cssTimeout = null;
+  }, 50);
+}
+
+module.exports = reloadCSS;
+},{"./bundle-url":"../../.config/yarn/global/node_modules/parcel-bundler/src/builtins/bundle-url.js"}],"src/style.scss":[function(require,module,exports) {
+var reloadCSS = require('_css_loader');
+
+module.hot.dispose(reloadCSS);
+module.hot.accept(reloadCSS);
+},{"_css_loader":"../../.config/yarn/global/node_modules/parcel-bundler/src/builtins/css-loader.js"}],"src/index.ts":[function(require,module,exports) {
 "use strict";
 
-var __importDefault = this && this.__importDefault || function (mod) {
-  return mod && mod.__esModule ? mod : {
-    "default": mod
-  };
-};
+var _message = _interopRequireDefault(require("./message"));
 
-exports.__esModule = true; // index.ts
+require("./style.scss");
 
-var message_1 = __importDefault(require("./message"));
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-console.log(message_1["default"]);
-console.log(Date.now(), (2 ^ 64) > 18446744073709551616);
-},{"./message":"src/message.ts"}],"../../.config/yarn/global/node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+// index.ts
+console.log(_message.default);
+var inputWrapper = document.getElementById('input'); // clean up just in case
+
+inputWrapper.childNodes.forEach(function (node) {
+  return node.remove();
+});
+
+for (var y = 0; y < 100; y++) {
+  var row = document.createElement('div');
+  row.setAttribute('data-row', y.toString());
+  inputWrapper.appendChild(row);
+
+  for (var x = 0; x < 100; x++) {
+    var clickableElement = document.createElement('div');
+    clickableElement.classList.add('cell');
+    clickableElement.setAttribute('data-x', x.toString());
+    clickableElement.setAttribute('data-y', y.toString());
+    clickableElement.setAttribute('data-selected', 'false');
+    row.appendChild(clickableElement);
+  }
+}
+},{"./message":"src/message.ts","./style.scss":"src/style.scss"}],"../../.config/yarn/global/node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -152,7 +244,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49368" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64227" + '/');
 
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);

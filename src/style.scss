@@ -1,0 +1,16 @@
+#input {
+    > div {
+        display: flex;
+    }
+    .cell {
+        flex: 0 0 6px;
+        height: 6px;
+        width: 6px;
+        border: 1px solid black;
+
+        &:hover {
+            cursor: pointer;
+            background-color: black;
+        }
+    }
+}

@@ -8,6 +8,12 @@ module.exports = function (config) {
             "**/*.ts": "karma-typescript" // *.tsx for React Jsx
         },
         reporters: ["progress", "karma-typescript"],
-        browsers: ["Chrome"]
+        browsers: ["Chrome"],
+        logLevel: config.LOG_DEBUG,
+        karmaTypescriptConfig: {
+            compilerOptions: {
+                target: "esnext"
+            }
+        }
     });
 };

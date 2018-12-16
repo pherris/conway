@@ -3,9 +3,19 @@
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
+  "scripts": {
+    "test": "karma start"
+  },
   "devDependencies": {
-    "typescript": "^3.2.2",
+    "@types/jasmine": "^2.5.35",
+    "jasmine-core": "^3.3.0",
     "karma": "^2.0.0",
-    "karma-typescript": "3.0.13"
+    "karma-chrome-launcher": "^2.2.0",
+    "karma-jasmine": "^2.0.1",
+    "karma-typescript": "3.0.13",
+    "typescript": "^3.2.2"
+  },
+  "dependencies": {
+    "sass": "^1.15.2"
   }
 }
