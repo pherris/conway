@@ -1,13 +1,18 @@
+export const DOM = {
+    ROWS: BigInt(100),
+    COLS: BigInt(100)
+}
+
 // create the grid cells
 export function createGrid(inputWrapper): void {
     // clean up just in case
     inputWrapper.childNodes.forEach((node) => node.remove())
 
-    for (let y = 0; y < 100; y++) {
+    for (let y = BigInt(0); y < DOM.ROWS; y++) {
         const row = document.createElement('div')
         row.setAttribute('data-row', y.toString())
         inputWrapper.appendChild(row)
-        for (let x = 0; x < 100; x++) {
+        for (let x = BigInt(0); x < DOM.COLS; x++) {
             const clickableElement = document.createElement('div')
             clickableElement.classList.add('cell')
             clickableElement.setAttribute('data-x', x.toString());

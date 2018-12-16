@@ -118,20 +118,26 @@ exports.getSelected = getSelected;
 exports.cellIsSelected = cellIsSelected;
 exports.getCellCoordinates = getCellCoordinates;
 exports.getCellFromCoordinates = getCellFromCoordinates;
+exports.DOM = void 0;
+var DOM = {
+  ROWS: BigInt(100),
+  COLS: BigInt(100)
+}; // create the grid cells
 
-// create the grid cells
+exports.DOM = DOM;
+
 function createGrid(inputWrapper) {
   // clean up just in case
   inputWrapper.childNodes.forEach(function (node) {
     return node.remove();
   });
 
-  for (var y = 0; y < 100; y++) {
+  for (var y = BigInt(0); y < DOM.ROWS; y++) {
     var row = document.createElement('div');
     row.setAttribute('data-row', y.toString());
     inputWrapper.appendChild(row);
 
-    for (var x = 0; x < 100; x++) {
+    for (var x = BigInt(0); x < DOM.COLS; x++) {
       var clickableElement = document.createElement('div');
       clickableElement.classList.add('cell');
       clickableElement.setAttribute('data-x', x.toString());
@@ -186,7 +192,7 @@ function getCellFromCoordinates(x, y) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.Point = void 0;
+exports.default = void 0;
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -263,13 +269,158 @@ function () {
     value: function nextLowerCoordinate(coord) {
       return coord == this.MIN ? this.MAX : coord - BigInt(1);
     }
+  }, {
+    key: "coordinates",
+    get: function get() {
+      return [this.x, this.y];
+    }
   }]);
 
   return Point;
 }();
 
-exports.Point = Point;
-},{}],"../../.config/yarn/global/node_modules/parcel-bundler/src/builtins/bundle-url.js":[function(require,module,exports) {
+exports.default = Point;
+},{}],"src/active_points.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _point = _interopRequireDefault(require("./point"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest(); }
+
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
+
+function _iterableToArrayLimit(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+
+function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+var ActivePoints =
+/*#__PURE__*/
+function () {
+  function ActivePoints() {
+    _classCallCheck(this, ActivePoints);
+
+    // We're going to use an array to hold the active points and use the slower `find` approach to pull back each item we
+    // are interested in.  The preference would be to use a hash where the key was an array of the `x` and `y` coordinates
+    // which would make lookup very snappy, however I found I cannot use an object as they key in Typescript and I cannot 
+    // serialize the larger numbers without losing percision. 
+    // If speed is important or this approach proves itself to be too slow, I would move this structure onto a language 
+    // where the map approach was possible - probably shouldve picked Ruby...
+    this.cache = [];
+    this._removed = [];
+  }
+
+  _createClass(ActivePoints, [{
+    key: "cleanRemoved",
+    value: function cleanRemoved() {
+      this._removed = [];
+    } // add an item into the cache, has a side effect of hydrating siblings - could be more of a pure function
+
+  }, {
+    key: "addOrUpdate",
+    value: function addOrUpdate(point) {
+      var _this = this;
+
+      if (!this.find(point.coordinates)) {
+        this.cache.push(point);
+      }
+
+      point.neighbors().forEach(function (neighboringCoordinates) {
+        // if our neighbor already exists, we've nothing to do
+        if (_this.find(neighboringCoordinates)) {
+          console.log('sibling already present, not adding');
+          return;
+        }
+
+        console.log('sibling added', neighboringCoordinates);
+
+        _this.cache.push(new _point.default(neighboringCoordinates[0], neighboringCoordinates[1], false));
+      });
+      console.log(this.cache.length);
+    } // safely removes an item from the cache returning `true` if it succeeds and `false` if it does not
+
+  }, {
+    key: "remove",
+    value: function remove(point) {
+      var indexToRemove = this.findIndexInCache(point.coordinates);
+
+      if (indexToRemove == -1) {
+        return false;
+      }
+
+      this._removed.push(this.cache.splice(indexToRemove, 1)[0]);
+
+      return true;
+    } // get the cached item if it exists
+
+  }, {
+    key: "find",
+    value: function find(coordinates) {
+      var index = this.findIndexInCache(coordinates);
+      if (index == -1) return null;
+      return this.cache[index];
+    } // find the siblings of this point and return the total number that are selected
+
+  }, {
+    key: "countOfSelectedSiblings",
+    value: function countOfSelectedSiblings(point) {
+      var _this2 = this;
+
+      var cachedPoint = this.cache[this.findIndexInCache(point.coordinates)];
+      return cachedPoint.neighbors().filter(function (coordinates) {
+        var neighboringIndex = _this2.findIndexInCache(coordinates);
+
+        return neighboringIndex > -1 && _this2.cache[neighboringIndex].selected;
+      }).length;
+    } // returns the index of the object you seek
+
+  }, {
+    key: "findIndexInCache",
+    value: function findIndexInCache(coordinates) {
+      var x;
+      var y;
+
+      var _coordinates = _slicedToArray(coordinates, 2);
+
+      x = _coordinates[0];
+      y = _coordinates[1];
+      return this.cache.findIndex(function (point) {
+        return point.coordinates[0] == x && point.coordinates[1] == y;
+      });
+    }
+  }, {
+    key: "cached",
+    get: function get() {
+      return this.cache.map(function (point) {
+        return point.coordinates;
+      });
+    }
+  }, {
+    key: "removedItems",
+    get: function get() {
+      return this._removed.map(function (point) {
+        return point.coordinates;
+      });
+    }
+  }]);
+
+  return ActivePoints;
+}();
+
+exports.default = ActivePoints;
+},{"./point":"src/point.ts"}],"../../.config/yarn/global/node_modules/parcel-bundler/src/builtins/bundle-url.js":[function(require,module,exports) {
 var bundleURL = null;
 
 function getBundleURLCached() {
@@ -346,95 +497,97 @@ module.hot.accept(reloadCSS);
 
 var _dom_helpers = require("./dom_helpers");
 
-var _point = require("./point");
+var _point = _interopRequireDefault(require("./point"));
+
+var _active_points = _interopRequireDefault(require("./active_points"));
 
 require("./style.scss");
 
-function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest(); }
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
-
-function _iterableToArrayLimit(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
-
-function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
-
-// TODO, the grid is not quite centered
-// TODO, this approach isn't working due to the limit in the js number and tos
 var runButton = document.getElementById('run');
 var frameContainer = document.getElementById('frame');
 var inputWrapper = document.getElementById('input');
-var runner; // holds the selected cells - coordinates are keys, selected is the new point
+var currentState = document.getElementById('current-state');
+var runner;
+var activePoints = new _active_points.default();
 
-var current = {};
-inputWrapper.addEventListener('click', function (e) {
-  var cell = e.srcElement;
-  var x;
-  var y;
+function addPoint(coordinates, selected) {
+  var existingCachedItem = activePoints.find(coordinates);
+  var point;
 
-  var _toggleSelected = (0, _dom_helpers.toggleSelected)(cell);
+  if (existingCachedItem) {
+    existingCachedItem.selected = !existingCachedItem.selected;
+    point = existingCachedItem;
+  } else {
+    point = new _point.default(coordinates[0], coordinates[1], selected);
+  }
 
-  var _toggleSelected2 = _slicedToArray(_toggleSelected, 2);
+  activePoints.addOrUpdate(point);
+} // This method determines if the UI contains any of the active points and displays them, it also serializes the cache into the textarea
 
-  x = _toggleSelected2[0];
-  y = _toggleSelected2[1];
-  current[(0, _dom_helpers.getCellCoordinates)(cell).toString()] = new _point.Point(x, y, (0, _dom_helpers.cellIsSelected)(cell));
-});
 
-function countOfSelectedSiblings(coordinates) {
-  var point = current[coordinates.toString()];
-  return point.neighbors().filter(function (coordinates) {
-    return current[coordinates.toString()] && current[coordinates.toString()].selected;
-  }).length;
+function syncUi(visibleAddedPoints, visibleRemovedPoints) {
+  visibleAddedPoints.forEach(function (coordinates) {
+    var cell = (0, _dom_helpers.getCellFromCoordinates)(coordinates[0].toString(), coordinates[1].toString());
+    (0, _dom_helpers.selectCell)(cell);
+  });
+  visibleRemovedPoints.forEach(function (coordinates) {
+    var cell = (0, _dom_helpers.getCellFromCoordinates)(coordinates[0].toString(), coordinates[1].toString());
+    (0, _dom_helpers.deselectCell)(cell);
+  });
+  var selectedPoints = activePoints.cached.filter(function (coordinates) {
+    return activePoints.find(coordinates).selected;
+  }).reduce(function (accumulator, coordinates) {
+    accumulator.push([coordinates[0].toString(), coordinates[1].toString()]);
+    return accumulator;
+  }, []);
+  currentState.value = JSON.stringify(selectedPoints, null, 2);
 }
 
-function die(coordinates) {
-  var x;
-  var y;
+function perform() {
+  console.log("Cache contains ".concat(activePoints.cached.length, " items"));
+  var added = [];
+  var removed = [];
+  activePoints.cached.forEach(function (coordinate) {
+    var point = activePoints.find(coordinate);
+    var selectedSiblings = activePoints.countOfSelectedSiblings(point);
+    console.log(point, selectedSiblings);
 
-  var _coordinates = _slicedToArray(coordinates, 2);
-
-  x = _coordinates[0];
-  y = _coordinates[1];
-  (0, _dom_helpers.deselectCell)((0, _dom_helpers.getCellFromCoordinates)(x, y));
-}
-
-function beBorn(coordinates) {
-  var x;
-  var y;
-
-  var _coordinates2 = _slicedToArray(coordinates, 2);
-
-  x = _coordinates2[0];
-  y = _coordinates2[1];
-  (0, _dom_helpers.selectCell)((0, _dom_helpers.getCellFromCoordinates)(x, y));
-} // This method looks through all eligible points and fills in whether or not they should be selected
-
-
-function decideFate(pointsToCheck) {
-  console.log('deciding fate on ' + pointsToCheck.length + ' cells', 'cache length: ' + Object.keys(current).length); // ensure all are represented by a point in the hash
-
-  pointsToCheck.forEach(function (coordinates) {
-    if (!current[coordinates.toString()]) {
-      current[coordinates.toString()] = new _point.Point(coordinates[0], coordinates[1], false);
+    if (selectedSiblings < 2 || selectedSiblings > 3) {
+      // activePoints.remove(point)
+      removed.push(point);
     }
 
-    var selectedSiblings = countOfSelectedSiblings(coordinates);
-
-    if (current[coordinates.toString()].selected) {
-      if (selectedSiblings < 2) {
-        die(coordinates);
-      }
-
-      if (selectedSiblings > 3) {
-        die(coordinates);
-      }
-    } else if (selectedSiblings === 3) {
-      beBorn(coordinates);
+    if (selectedSiblings === 3) {
+      // point.selected = true
+      added.push(point);
     }
   });
-  current = {};
-}
+  syncUi(activePoints.cached.filter(function (coordinates) {
+    var x = coordinates[0];
+    var y = coordinates[1];
+    return x < _dom_helpers.DOM.COLS && y < _dom_helpers.DOM.ROWS;
+  }), activePoints.removedItems.filter(function (coordinates) {
+    var x = coordinates[0];
+    var y = coordinates[1];
+    return x < _dom_helpers.DOM.COLS && y < _dom_helpers.DOM.ROWS;
+  })); // update the cache
 
+  added.forEach(function (point) {
+    return point.selected = true;
+  });
+  removed.forEach(function (point) {
+    return activePoints.remove(point);
+  });
+  activePoints.cleanRemoved();
+} // Add the ability to click cells to toggle them on and off
+
+
+inputWrapper.addEventListener('click', function (e) {
+  var cell = e.srcElement;
+  addPoint((0, _dom_helpers.toggleSelected)(cell), (0, _dom_helpers.cellIsSelected)(cell));
+});
 runButton.addEventListener('click', function () {
   // allow run button to start and stop
   if (runner) {
@@ -443,27 +596,11 @@ runButton.addEventListener('click', function () {
     return;
   }
 
-  runner = setInterval(function () {
-    var currentlySelected = (0, _dom_helpers.getSelected)();
-    var pointsToCheck = []; // create an array of all the selected points and their neighbors
-
-    currentlySelected.forEach(function (coordinates) {
-      if (!current[coordinates.toString()]) {
-        current[coordinates.toString()] = new _point.Point(coordinates[0], coordinates[1], true);
-      }
-
-      pointsToCheck = pointsToCheck.concat(current[coordinates.toString()].neighbors().map(function (neighborCoordinates) {
-        // looks like we cannot toString on such a large value...
-        // perhaps each cell should have a random number or divide the actual number by something to create a decimal
-        return neighborCoordinates;
-      }));
-      pointsToCheck.push(coordinates);
-    });
-    decideFate(pointsToCheck);
-  }, 1000);
+  runner = setInterval(perform, 30 * 1000);
+  setTimeout(perform, 0);
 });
 (0, _dom_helpers.createGrid)(inputWrapper);
-},{"./dom_helpers":"src/dom_helpers.ts","./point":"src/point.ts","./style.scss":"src/style.scss"}],"../../.config/yarn/global/node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"./dom_helpers":"src/dom_helpers.ts","./point":"src/point.ts","./active_points":"src/active_points.ts","./style.scss":"src/style.scss"}],"../../.config/yarn/global/node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -490,7 +627,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52060" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54341" + '/');
 
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);

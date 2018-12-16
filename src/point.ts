@@ -1,15 +1,20 @@
 // represents a point in the grid which is aware of the coordinates of each of its neighbors
-export class Point {
-    private x: bigint;
-    private y: bigint;
-    private selected: boolean;
+export default class Point {
     private MIN: bigint = BigInt(0);
     private MAX: bigint = BigInt(1.8446744e+19);
+
+    private x: bigint;
+    private y: bigint;
+    public selected: boolean;
 
     constructor(x: bigint, y: bigint, selected: boolean) {
         this.x = x;
         this.y = y;
         this.selected = selected;
+    }
+
+    get coordinates(): bigint[] {
+        return [this.x, this.y]
     }
 
     neighbors(): bigint[][] {
