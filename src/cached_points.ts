@@ -1,6 +1,6 @@
 import Point from "./point";
 
-export default class ActivePoints {
+export default class CachedPoints {
     // We're going to use an array to hold the active points and use the slower `find` approach to pull back each item we
     // are interested in.  The preference would be to use a hash where the key was an array of the `x` and `y` coordinates
     // which would make lookup very snappy, however I found I cannot use an object as they key in Typescript and I cannot 
@@ -28,8 +28,11 @@ export default class ActivePoints {
 
     // add an item into the cache, has a side effect of hydrating siblings - could be more of a pure function
     public addOrUpdate(point: Point): void {
-        if (!this.find(point.coordinates)) {
+        const existingPoint = this.find(point.coordinates)
+        if (!existingPoint) {
             this.cache.push(point)
+        } else {
+            existingPoint.selected = point.selected
         }
 
         point.neighbors().forEach((neighboringCoordinates: bigint[]) => {

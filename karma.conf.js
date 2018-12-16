@@ -4,16 +4,19 @@ module.exports = function (config) {
         files: [
             "src/**/*.ts" // *.tsx for React Jsx
         ],
+        include: "**/*_spec.ts",
         preprocessors: {
             "**/*.ts": "karma-typescript" // *.tsx for React Jsx
         },
         reporters: ["progress", "karma-typescript"],
-        browsers: ["Chrome"],
-        logLevel: config.LOG_DEBUG,
+        browsers: ["ChromeHeadless"],
+        logLevel: config.LOG_INFO,
         karmaTypescriptConfig: {
             compilerOptions: {
                 target: "esnext"
             }
-        }
+        },
+        autoWatch: true,
+        singleRun: false,
     });
 };

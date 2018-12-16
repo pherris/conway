@@ -5,6 +5,8 @@ export const DOM = {
 
 // create the grid cells
 export function createGrid(inputWrapper): void {
+    if (!inputWrapper) return
+
     // clean up just in case
     inputWrapper.childNodes.forEach((node) => node.remove())
 

@@ -30,15 +30,15 @@ export default class Point {
         ]
     }
 
-    private topLeftNeighbor(): Array<bigint> {
+    private bottomLeftNeighbor(): Array<bigint> {
         return [this.nextLowerCoordinate(this.x), this.nextHigherCoordinate(this.y)]
     }
 
-    private topNeighbor(): Array<bigint> {
+    private bottomNeighbor(): Array<bigint> {
         return [this.x, this.nextHigherCoordinate(this.y)]
     }
 
-    private topRightNeighbor(): Array<bigint> {
+    private bottomRightNeighbor(): Array<bigint> {
         return [this.nextHigherCoordinate(this.x), this.nextHigherCoordinate(this.y)]
     }
 
@@ -50,15 +50,15 @@ export default class Point {
         return [this.nextHigherCoordinate(this.x), this.y]
     }
 
-    private bottomLeftNeighbor(): Array<bigint> {
+    private topLeftNeighbor(): Array<bigint> {
         return [this.nextLowerCoordinate(this.x), this.nextLowerCoordinate(this.y)]
     }
 
-    private bottomNeighbor(): Array<bigint> {
+    private topNeighbor(): Array<bigint> {
         return [this.x, this.nextLowerCoordinate(this.y)]
     }
 
-    private bottomRightNeighbor(): Array<bigint> {
+    private topRightNeighbor(): Array<bigint> {
         return [this.nextHigherCoordinate(this.x), this.nextLowerCoordinate(this.y)]
     }
 

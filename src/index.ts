@@ -1,8 +1,8 @@
 // index.ts
 import message from './message'
-import { createGrid, DOM, toggleSelected, cellIsSelected, getCellCoordinates, getCellFromCoordinates, deselectCell, selectCell } from './dom_helpers'
+import { createGrid, DOM, toggleSelected, cellIsSelected, getCellFromCoordinates, deselectCell, selectCell } from './dom_helpers'
 import Point from './point'
-import ActivePoints from './active_points'
+import CachedPoints from './cached_points'
 import './style.scss'
 
 const runButton = document.getElementById('run')
@@ -12,10 +12,10 @@ const initialState = <HTMLInputElement>document.getElementById('initial-state')
 const currentState = <HTMLInputElement>document.getElementById('meta')
 let running: boolean = false
 let frameCount: number = 0
-const activePoints = new ActivePoints()
+const cachedPoints = new CachedPoints()
 
 function addPoint(coordinates: bigint[], selected: boolean): void {
-    const existingCachedItem = activePoints.find(coordinates)
+    const existingCachedItem = cachedPoints.find(coordinates)
 
     let point: Point
 
@@ -26,7 +26,7 @@ function addPoint(coordinates: bigint[], selected: boolean): void {
         point = new Point(coordinates[0], coordinates[1], selected)
     }
 
-    activePoints.addOrUpdate(point)
+    cachedPoints.addOrUpdate(point)
 }
 
 // This method determines if the UI contains any of the active points and displays them, it also serializes the cache into the textarea
@@ -41,8 +41,8 @@ function syncUi(visibleAddedPoints: Array<Point>, visibleRemovedPoints: Array<Po
         deselectCell(cell)
     })
 
-    const selectedPoints = activePoints.cached
-        .filter(coordinates => activePoints.find(coordinates).selected)
+    const selectedPoints = cachedPoints.cached
+        .filter(coordinates => cachedPoints.find(coordinates).selected)
         .reduce((accumulator: string[][], coordinates) => {
             accumulator.push([coordinates[0].toString(), coordinates[1].toString()])
             return accumulator
@@ -53,15 +53,15 @@ function syncUi(visibleAddedPoints: Array<Point>, visibleRemovedPoints: Array<Po
 }
 
 function perform() {
-    console.log(`Cache contains ${activePoints.cached.length} items`)
+    console.log(`Cache contains ${cachedPoints.cached.length} items`)
     if (!running) return
 
     const added = []
     const removed = []
     const surviving = []
-    activePoints.cached.forEach(coordinate => {
-        const point = activePoints.find(coordinate)
-        const selectedSiblings: number = activePoints.countOfSelectedSiblings(point)
+    cachedPoints.cached.forEach(coordinate => {
+        const point = cachedPoints.find(coordinate)
+        const selectedSiblings: number = cachedPoints.countOfSelectedSiblings(point)
 
         if (point.selected && (selectedSiblings < 2 || selectedSiblings > 3)) {
             removed.push(point)
@@ -79,9 +79,9 @@ function perform() {
     })
 
     // update the cache
-    removed.forEach(point => activePoints.remove(point))
-    added.concat(surviving).forEach(point => (point.selected = true) && activePoints.addOrUpdate(point))
-    activePoints.cleanRemoved()
+    removed.forEach(point => cachedPoints.remove(point))
+    added.concat(surviving).forEach(point => (point.selected = true) && cachedPoints.addOrUpdate(point))
+    cachedPoints.cleanRemoved()
 
     syncUi(
         added.filter(point => {
@@ -100,12 +100,12 @@ function perform() {
 }
 
 // Add the ability to click cells to toggle them on and off
-inputWrapper.addEventListener('click', (e) => {
+inputWrapper && inputWrapper.addEventListener('click', (e) => {
     const cell = e.srcElement
     addPoint(toggleSelected(cell), cellIsSelected(cell))
 })
 
-runButton.addEventListener('click', () => {
+runButton && runButton.addEventListener('click', () => {
     // allow run button to start and stop
     if (running) {
         runButton.innerText = 'Restart'
@@ -118,7 +118,7 @@ runButton.addEventListener('click', () => {
     setTimeout(perform, 0)
 })
 
-initialState.addEventListener('change', () => {
+initialState && initialState.addEventListener('change', () => {
     const newState = JSON.parse(initialState.value)
     newState.forEach(coordinates => {
         const cell = <HTMLElement>getCellFromCoordinates(coordinates[0], coordinates[1])
