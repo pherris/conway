@@ -1,7 +1,7 @@
 // represents a point in the grid which is aware of the coordinates of each of its neighbors
 export default class Point {
     private MIN: bigint = BigInt(0);
-    private MAX: bigint = BigInt(1.8446744e+19);
+    private MAX: bigint = BigInt(18446744073709551616);
 
     private x: bigint;
     private y: bigint;

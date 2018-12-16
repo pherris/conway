@@ -208,7 +208,7 @@ function () {
     _classCallCheck(this, Point);
 
     this.MIN = BigInt(0);
-    this.MAX = BigInt(1.8446744e+19);
+    this.MAX = BigInt(18446744073709551616);
     this.x = x;
     this.y = y;
     this.selected = selected;
@@ -640,7 +640,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "56486" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58709" + '/');
 
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
