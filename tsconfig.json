@@ -1,0 +1,7 @@
+{
+    "compilerOptions": {
+        "target": "esnext",
+        "sourceMap": true,
+        "module": "es6"
+    }
+}
