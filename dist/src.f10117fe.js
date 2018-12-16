@@ -508,8 +508,10 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 var runButton = document.getElementById('run');
 var frameContainer = document.getElementById('frame');
 var inputWrapper = document.getElementById('input');
-var currentState = document.getElementById('current-state');
-var runner;
+var initialState = document.getElementById('initial-state');
+var currentState = document.getElementById('meta');
+var running = false;
+var frameCount = 0;
 var activePoints = new _active_points.default();
 
 function addPoint(coordinates, selected) {
@@ -528,12 +530,12 @@ function addPoint(coordinates, selected) {
 
 
 function syncUi(visibleAddedPoints, visibleRemovedPoints) {
-  visibleAddedPoints.forEach(function (coordinates) {
-    var cell = (0, _dom_helpers.getCellFromCoordinates)(coordinates[0].toString(), coordinates[1].toString());
+  visibleAddedPoints.forEach(function (point) {
+    var cell = (0, _dom_helpers.getCellFromCoordinates)(point.coordinates[0].toString(), point.coordinates[1].toString());
     (0, _dom_helpers.selectCell)(cell);
   });
-  visibleRemovedPoints.forEach(function (coordinates) {
-    var cell = (0, _dom_helpers.getCellFromCoordinates)(coordinates[0].toString(), coordinates[1].toString());
+  visibleRemovedPoints.forEach(function (point) {
+    var cell = (0, _dom_helpers.getCellFromCoordinates)(point.coordinates[0].toString(), point.coordinates[1].toString());
     (0, _dom_helpers.deselectCell)(cell);
   });
   var selectedPoints = activePoints.cached.filter(function (coordinates) {
@@ -542,45 +544,52 @@ function syncUi(visibleAddedPoints, visibleRemovedPoints) {
     accumulator.push([coordinates[0].toString(), coordinates[1].toString()]);
     return accumulator;
   }, []);
-  currentState.value = JSON.stringify(selectedPoints, null, 2);
+  currentState.querySelector('pre').innerText = JSON.stringify(selectedPoints, null, 2);
+  frameContainer.innerText = (frameCount++).toString();
 }
 
 function perform() {
   console.log("Cache contains ".concat(activePoints.cached.length, " items"));
+  if (!running) return;
   var added = [];
   var removed = [];
+  var surviving = [];
   activePoints.cached.forEach(function (coordinate) {
     var point = activePoints.find(coordinate);
     var selectedSiblings = activePoints.countOfSelectedSiblings(point);
-    console.log(point, selectedSiblings);
 
     if (selectedSiblings < 2 || selectedSiblings > 3) {
-      // activePoints.remove(point)
       removed.push(point);
-    }
+    } // be born!
 
-    if (selectedSiblings === 3) {
-      // point.selected = true
+
+    if (!point.selected && selectedSiblings === 3) {
       added.push(point);
-    }
-  });
-  syncUi(activePoints.cached.filter(function (coordinates) {
-    var x = coordinates[0];
-    var y = coordinates[1];
-    return x < _dom_helpers.DOM.COLS && y < _dom_helpers.DOM.ROWS;
-  }), activePoints.removedItems.filter(function (coordinates) {
-    var x = coordinates[0];
-    var y = coordinates[1];
-    return x < _dom_helpers.DOM.COLS && y < _dom_helpers.DOM.ROWS;
-  })); // update the cache
+    } // survive
 
-  added.forEach(function (point) {
-    return point.selected = true;
-  });
+
+    if (point.selected && selectedSiblings == 2) {
+      surviving.push(point);
+    }
+  }); // update the cache
+
   removed.forEach(function (point) {
     return activePoints.remove(point);
   });
+  added.concat(surviving).forEach(function (point) {
+    return (point.selected = true) && activePoints.addOrUpdate(point);
+  });
   activePoints.cleanRemoved();
+  syncUi(added.filter(function (point) {
+    var x = point.coordinates[0];
+    var y = point.coordinates[1];
+    return point.selected && x < _dom_helpers.DOM.COLS && y < _dom_helpers.DOM.ROWS;
+  }), removed.filter(function (point) {
+    var x = point.coordinates[0];
+    var y = point.coordinates[1];
+    return x < _dom_helpers.DOM.COLS && y < _dom_helpers.DOM.ROWS;
+  }));
+  setTimeout(perform, 250);
 } // Add the ability to click cells to toggle them on and off
 
 
@@ -590,14 +599,22 @@ inputWrapper.addEventListener('click', function (e) {
 });
 runButton.addEventListener('click', function () {
   // allow run button to start and stop
-  if (runner) {
-    clearInterval(runner);
-    runner = null;
+  if (running) {
+    runButton.innerText = 'Restart';
+    running = false;
     return;
   }
 
-  runner = setInterval(perform, 30 * 1000);
+  running = true;
+  runButton.innerText = 'Stop';
   setTimeout(perform, 0);
+});
+initialState.addEventListener('change', function () {
+  var newState = JSON.parse(initialState.value);
+  newState.forEach(function (coordinates) {
+    var cell = (0, _dom_helpers.getCellFromCoordinates)(coordinates[0], coordinates[1]);
+    cell.click();
+  });
 });
 (0, _dom_helpers.createGrid)(inputWrapper);
 },{"./dom_helpers":"src/dom_helpers.ts","./point":"src/point.ts","./active_points":"src/active_points.ts","./style.scss":"src/style.scss"}],"../../.config/yarn/global/node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
@@ -627,7 +644,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54341" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58495" + '/');
 
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);

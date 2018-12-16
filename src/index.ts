@@ -8,8 +8,10 @@ import './style.scss'
 const runButton = document.getElementById('run')
 const frameContainer = document.getElementById('frame')
 const inputWrapper = document.getElementById('input')
-const currentState = <HTMLInputElement>document.getElementById('current-state')
-let runner: number;
+const initialState = <HTMLInputElement>document.getElementById('initial-state')
+const currentState = <HTMLInputElement>document.getElementById('meta')
+let running: boolean = false
+let frameCount: number = 0
 const activePoints = new ActivePoints()
 
 function addPoint(coordinates: bigint[], selected: boolean): void {
@@ -28,14 +30,14 @@ function addPoint(coordinates: bigint[], selected: boolean): void {
 }
 
 // This method determines if the UI contains any of the active points and displays them, it also serializes the cache into the textarea
-function syncUi(visibleAddedPoints: bigint[][], visibleRemovedPoints: bigint[][]): void {
-    visibleAddedPoints.forEach(coordinates => {
-        const cell = getCellFromCoordinates(coordinates[0].toString(), coordinates[1].toString())
+function syncUi(visibleAddedPoints: Array<Point>, visibleRemovedPoints: Array<Point>): void {
+    visibleAddedPoints.forEach(point => {
+        const cell = getCellFromCoordinates(point.coordinates[0].toString(), point.coordinates[1].toString())
         selectCell(cell)
     })
 
-    visibleRemovedPoints.forEach(coordinates => {
-        const cell = getCellFromCoordinates(coordinates[0].toString(), coordinates[1].toString())
+    visibleRemovedPoints.forEach(point => {
+        const cell = getCellFromCoordinates(point.coordinates[0].toString(), point.coordinates[1].toString())
         deselectCell(cell)
     })
 
@@ -46,47 +48,55 @@ function syncUi(visibleAddedPoints: bigint[][], visibleRemovedPoints: bigint[][]
             return accumulator
         }, [])
 
-    currentState.value = JSON.stringify(selectedPoints, null, 2)
+    currentState.querySelector('pre').innerText = JSON.stringify(selectedPoints, null, 2)
+    frameContainer.innerText = (frameCount++).toString()
 }
 
 function perform() {
     console.log(`Cache contains ${activePoints.cached.length} items`)
+    if (!running) return
+
     const added = []
     const removed = []
+    const surviving = []
     activePoints.cached.forEach(coordinate => {
         const point = activePoints.find(coordinate)
         const selectedSiblings: number = activePoints.countOfSelectedSiblings(point)
 
-        console.log(point, selectedSiblings)
         if (selectedSiblings < 2 || selectedSiblings > 3) {
-            // activePoints.remove(point)
             removed.push(point)
         }
 
-        if (selectedSiblings === 3) {
-            // point.selected = true
+        // be born!
+        if (!point.selected && selectedSiblings === 3) {
             added.push(point)
+        }
+
+        // survive
+        if (point.selected && selectedSiblings == 2) {
+            surviving.push(point)
         }
     })
 
+    // update the cache
+    removed.forEach(point => activePoints.remove(point))
+    added.concat(surviving).forEach(point => (point.selected = true) && activePoints.addOrUpdate(point))
+    activePoints.cleanRemoved()
+
     syncUi(
-        activePoints.cached.filter(coordinates => {
-            let x = coordinates[0]
-            let y = coordinates[1]
-            return x < DOM.COLS && y < DOM.ROWS
+        added.filter(point => {
+            let x = point.coordinates[0]
+            let y = point.coordinates[1]
+            return point.selected && x < DOM.COLS && y < DOM.ROWS
         }),
 
-        activePoints.removedItems.filter(coordinates => {
-            let x = coordinates[0]
-            let y = coordinates[1]
+        removed.filter(point => {
+            let x = point.coordinates[0]
+            let y = point.coordinates[1]
             return x < DOM.COLS && y < DOM.ROWS
         })
     )
-
-    // update the cache
-    added.forEach(point => point.selected = true)
-    removed.forEach(point => activePoints.remove(point))
-    activePoints.cleanRemoved()
+    setTimeout(perform, 250)
 }
 
 // Add the ability to click cells to toggle them on and off
@@ -97,14 +107,23 @@ inputWrapper.addEventListener('click', (e) => {
 
 runButton.addEventListener('click', () => {
     // allow run button to start and stop
-    if (runner) {
-        clearInterval(runner)
-        runner = null
+    if (running) {
+        runButton.innerText = 'Restart'
+        running = false
         return
     }
 
-    runner = setInterval(perform, 30 * 1000)
+    running = true
+    runButton.innerText = 'Stop'
     setTimeout(perform, 0)
+})
+
+initialState.addEventListener('change', () => {
+    const newState = JSON.parse(initialState.value)
+    newState.forEach(coordinates => {
+        const cell = <HTMLElement>getCellFromCoordinates(coordinates[0], coordinates[1])
+        cell.click()
+    })
 })
 
 createGrid(inputWrapper)

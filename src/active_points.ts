@@ -9,7 +9,7 @@ export default class ActivePoints {
     // If speed is important or this approach proves itself to be too slow, I would move this structure onto a language 
     // where the map approach was possible - probably shouldve picked Ruby...
 
-    private cache: Array<Point> = []
+    cache: Array<Point> = []
     private _removed: Array<Point> = []
 
     constructor() { }

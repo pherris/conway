@@ -1,20 +1,37 @@
-#input {
+#run-container {
+    display: flex;
     > div {
-        display: flex;
-    }
-    .cell {
-        flex: 0 0 6px;
-        height: 6px;
-        width: 6px;
-        border: 1px solid black;
+        flex: 0 0 796px;
+        height: 796px;
+        overflow: scroll;
 
-        &:hover {
-            cursor: pointer;
-            background-color: gray;
-        }
-
-        &.selected {
-            background-color: black;
+        pre {
+            padding-left: 20px; 
         }
     }
+
+    #input {
+        > div {
+            display: flex;
+        }
+        .cell {
+            flex: 0 0 6px;
+            height: 6px;
+            width: 6px;
+            border: 1px solid black;
+
+            &:hover {
+                cursor: pointer;
+                background-color: gray;
+            }
+
+            &.selected {
+                background-color: black;
+            }
+        }
+    }
+}
+
+#frame {
+    padding-left: 30px;
 }
