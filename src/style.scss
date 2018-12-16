@@ -10,6 +10,10 @@
 
         &:hover {
             cursor: pointer;
+            background-color: gray;
+        }
+
+        &.selected {
             background-color: black;
         }
     }

@@ -104,16 +104,171 @@ parcelRequire = (function (modules, cache, entry, globalName) {
 
   // Override the current require with this new one
   return newRequire;
-})({"src/message.ts":[function(require,module,exports) {
+})({"src/dom_helpers.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = void 0;
-// message.ts
-var _default = 'Hello, world';
-exports.default = _default;
+exports.createGrid = createGrid;
+exports.toggleSelected = toggleSelected;
+exports.deselectCell = deselectCell;
+exports.selectCell = selectCell;
+exports.getSelected = getSelected;
+exports.cellIsSelected = cellIsSelected;
+exports.getCellCoordinates = getCellCoordinates;
+exports.getCellFromCoordinates = getCellFromCoordinates;
+
+// create the grid cells
+function createGrid(inputWrapper) {
+  // clean up just in case
+  inputWrapper.childNodes.forEach(function (node) {
+    return node.remove();
+  });
+
+  for (var y = 0; y < 100; y++) {
+    var row = document.createElement('div');
+    row.setAttribute('data-row', y.toString());
+    inputWrapper.appendChild(row);
+
+    for (var x = 0; x < 100; x++) {
+      var clickableElement = document.createElement('div');
+      clickableElement.classList.add('cell');
+      clickableElement.setAttribute('data-x', x.toString());
+      clickableElement.setAttribute('data-y', y.toString());
+      clickableElement.setAttribute('data-selected', 'false');
+      row.appendChild(clickableElement);
+    }
+  }
+}
+
+function toggleSelected(cell) {
+  if (cellIsSelected(cell)) {
+    deselectCell(cell);
+  } else {
+    selectCell(cell);
+  }
+
+  return getCellCoordinates(cell);
+}
+
+function deselectCell(cell) {
+  cell.classList.remove('selected');
+}
+
+function selectCell(cell) {
+  cell.classList.add('selected');
+} // inspects the DOM for currently selected cells
+
+
+function getSelected() {
+  var coordinates = [];
+  document.querySelectorAll('#input .cell.selected').forEach(function (selectedCell) {
+    coordinates.push(getCellCoordinates(selectedCell));
+  });
+  return coordinates;
+}
+
+function cellIsSelected(cell) {
+  return cell.classList.contains('selected');
+}
+
+function getCellCoordinates(cell) {
+  return [BigInt(cell.getAttribute('data-x')), BigInt(cell.getAttribute('data-y'))];
+}
+
+function getCellFromCoordinates(x, y) {
+  return document.querySelector("[data-x=\"".concat(x, "\"][data-y=\"").concat(y, "\"]"));
+}
+},{}],"src/point.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.Point = void 0;
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+// represents a point in the grid which is aware of the coordinates of each of its neighbors
+var Point =
+/*#__PURE__*/
+function () {
+  function Point(x, y, selected) {
+    _classCallCheck(this, Point);
+
+    this.MIN = BigInt(0);
+    this.MAX = BigInt(1.8446744e+19);
+    this.x = x;
+    this.y = y;
+    this.selected = selected;
+  }
+
+  _createClass(Point, [{
+    key: "neighbors",
+    value: function neighbors() {
+      return [this.topLeftNeighbor(), this.topNeighbor(), this.topRightNeighbor(), this.leftNeighbor(), this.rightNeighbor(), this.bottomLeftNeighbor(), this.bottomNeighbor(), this.bottomRightNeighbor()];
+    }
+  }, {
+    key: "topLeftNeighbor",
+    value: function topLeftNeighbor() {
+      return [this.nextLowerCoordinate(this.x), this.nextHigherCoordinate(this.y)];
+    }
+  }, {
+    key: "topNeighbor",
+    value: function topNeighbor() {
+      return [this.x, this.nextHigherCoordinate(this.y)];
+    }
+  }, {
+    key: "topRightNeighbor",
+    value: function topRightNeighbor() {
+      return [this.nextHigherCoordinate(this.x), this.nextHigherCoordinate(this.y)];
+    }
+  }, {
+    key: "leftNeighbor",
+    value: function leftNeighbor() {
+      return [this.nextLowerCoordinate(this.x), this.y];
+    }
+  }, {
+    key: "rightNeighbor",
+    value: function rightNeighbor() {
+      return [this.nextHigherCoordinate(this.x), this.y];
+    }
+  }, {
+    key: "bottomLeftNeighbor",
+    value: function bottomLeftNeighbor() {
+      return [this.nextLowerCoordinate(this.x), this.nextLowerCoordinate(this.y)];
+    }
+  }, {
+    key: "bottomNeighbor",
+    value: function bottomNeighbor() {
+      return [this.x, this.nextLowerCoordinate(this.y)];
+    }
+  }, {
+    key: "bottomRightNeighbor",
+    value: function bottomRightNeighbor() {
+      return [this.nextHigherCoordinate(this.x), this.nextLowerCoordinate(this.y)];
+    }
+  }, {
+    key: "nextHigherCoordinate",
+    value: function nextHigherCoordinate(coord) {
+      return coord == this.MAX ? this.MIN : coord + BigInt(1);
+    }
+  }, {
+    key: "nextLowerCoordinate",
+    value: function nextLowerCoordinate(coord) {
+      return coord == this.MIN ? this.MAX : coord - BigInt(1);
+    }
+  }]);
+
+  return Point;
+}();
+
+exports.Point = Point;
 },{}],"../../.config/yarn/global/node_modules/parcel-bundler/src/builtins/bundle-url.js":[function(require,module,exports) {
 var bundleURL = null;
 
@@ -189,35 +344,126 @@ module.hot.accept(reloadCSS);
 },{"_css_loader":"../../.config/yarn/global/node_modules/parcel-bundler/src/builtins/css-loader.js"}],"src/index.ts":[function(require,module,exports) {
 "use strict";
 
-var _message = _interopRequireDefault(require("./message"));
+var _dom_helpers = require("./dom_helpers");
+
+var _point = require("./point");
 
 require("./style.scss");
 
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest(); }
 
-// index.ts
-console.log(_message.default);
-var inputWrapper = document.getElementById('input'); // clean up just in case
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
 
-inputWrapper.childNodes.forEach(function (node) {
-  return node.remove();
+function _iterableToArrayLimit(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+
+function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
+
+// TODO, the grid is not quite centered
+// TODO, this approach isn't working due to the limit in the js number and tos
+var runButton = document.getElementById('run');
+var frameContainer = document.getElementById('frame');
+var inputWrapper = document.getElementById('input');
+var runner; // holds the selected cells - coordinates are keys, selected is the new point
+
+var current = {};
+inputWrapper.addEventListener('click', function (e) {
+  var cell = e.srcElement;
+  var x;
+  var y;
+
+  var _toggleSelected = (0, _dom_helpers.toggleSelected)(cell);
+
+  var _toggleSelected2 = _slicedToArray(_toggleSelected, 2);
+
+  x = _toggleSelected2[0];
+  y = _toggleSelected2[1];
+  current[(0, _dom_helpers.getCellCoordinates)(cell).toString()] = new _point.Point(x, y, (0, _dom_helpers.cellIsSelected)(cell));
 });
 
-for (var y = 0; y < 100; y++) {
-  var row = document.createElement('div');
-  row.setAttribute('data-row', y.toString());
-  inputWrapper.appendChild(row);
-
-  for (var x = 0; x < 100; x++) {
-    var clickableElement = document.createElement('div');
-    clickableElement.classList.add('cell');
-    clickableElement.setAttribute('data-x', x.toString());
-    clickableElement.setAttribute('data-y', y.toString());
-    clickableElement.setAttribute('data-selected', 'false');
-    row.appendChild(clickableElement);
-  }
+function countOfSelectedSiblings(coordinates) {
+  var point = current[coordinates.toString()];
+  return point.neighbors().filter(function (coordinates) {
+    return current[coordinates.toString()] && current[coordinates.toString()].selected;
+  }).length;
 }
-},{"./message":"src/message.ts","./style.scss":"src/style.scss"}],"../../.config/yarn/global/node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+
+function die(coordinates) {
+  var x;
+  var y;
+
+  var _coordinates = _slicedToArray(coordinates, 2);
+
+  x = _coordinates[0];
+  y = _coordinates[1];
+  (0, _dom_helpers.deselectCell)((0, _dom_helpers.getCellFromCoordinates)(x, y));
+}
+
+function beBorn(coordinates) {
+  var x;
+  var y;
+
+  var _coordinates2 = _slicedToArray(coordinates, 2);
+
+  x = _coordinates2[0];
+  y = _coordinates2[1];
+  (0, _dom_helpers.selectCell)((0, _dom_helpers.getCellFromCoordinates)(x, y));
+} // This method looks through all eligible points and fills in whether or not they should be selected
+
+
+function decideFate(pointsToCheck) {
+  console.log('deciding fate on ' + pointsToCheck.length + ' cells', 'cache length: ' + Object.keys(current).length); // ensure all are represented by a point in the hash
+
+  pointsToCheck.forEach(function (coordinates) {
+    if (!current[coordinates.toString()]) {
+      current[coordinates.toString()] = new _point.Point(coordinates[0], coordinates[1], false);
+    }
+
+    var selectedSiblings = countOfSelectedSiblings(coordinates);
+
+    if (current[coordinates.toString()].selected) {
+      if (selectedSiblings < 2) {
+        die(coordinates);
+      }
+
+      if (selectedSiblings > 3) {
+        die(coordinates);
+      }
+    } else if (selectedSiblings === 3) {
+      beBorn(coordinates);
+    }
+  });
+  current = {};
+}
+
+runButton.addEventListener('click', function () {
+  // allow run button to start and stop
+  if (runner) {
+    clearInterval(runner);
+    runner = null;
+    return;
+  }
+
+  runner = setInterval(function () {
+    var currentlySelected = (0, _dom_helpers.getSelected)();
+    var pointsToCheck = []; // create an array of all the selected points and their neighbors
+
+    currentlySelected.forEach(function (coordinates) {
+      if (!current[coordinates.toString()]) {
+        current[coordinates.toString()] = new _point.Point(coordinates[0], coordinates[1], true);
+      }
+
+      pointsToCheck = pointsToCheck.concat(current[coordinates.toString()].neighbors().map(function (neighborCoordinates) {
+        // looks like we cannot toString on such a large value...
+        // perhaps each cell should have a random number or divide the actual number by something to create a decimal
+        return neighborCoordinates;
+      }));
+      pointsToCheck.push(coordinates);
+    });
+    decideFate(pointsToCheck);
+  }, 1000);
+});
+(0, _dom_helpers.createGrid)(inputWrapper);
+},{"./dom_helpers":"src/dom_helpers.ts","./point":"src/point.ts","./style.scss":"src/style.scss"}],"../../.config/yarn/global/node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -244,7 +490,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64227" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52060" + '/');
 
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
