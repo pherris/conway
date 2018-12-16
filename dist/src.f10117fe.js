@@ -340,15 +340,11 @@ function () {
       point.neighbors().forEach(function (neighboringCoordinates) {
         // if our neighbor already exists, we've nothing to do
         if (_this.find(neighboringCoordinates)) {
-          console.log('sibling already present, not adding');
           return;
         }
 
-        console.log('sibling added', neighboringCoordinates);
-
         _this.cache.push(new _point.default(neighboringCoordinates[0], neighboringCoordinates[1], false));
       });
-      console.log(this.cache.length);
     } // safely removes an item from the cache returning `true` if it succeeds and `false` if it does not
 
   }, {
@@ -558,7 +554,7 @@ function perform() {
     var point = activePoints.find(coordinate);
     var selectedSiblings = activePoints.countOfSelectedSiblings(point);
 
-    if (selectedSiblings < 2 || selectedSiblings > 3) {
+    if (point.selected && (selectedSiblings < 2 || selectedSiblings > 3)) {
       removed.push(point);
     } // be born!
 
@@ -568,7 +564,7 @@ function perform() {
     } // survive
 
 
-    if (point.selected && selectedSiblings == 2) {
+    if (point.selected && (selectedSiblings == 2 || selectedSiblings == 3)) {
       surviving.push(point);
     }
   }); // update the cache
@@ -589,7 +585,7 @@ function perform() {
     var y = point.coordinates[1];
     return x < _dom_helpers.DOM.COLS && y < _dom_helpers.DOM.ROWS;
   }));
-  setTimeout(perform, 250);
+  setTimeout(perform, 0);
 } // Add the ability to click cells to toggle them on and off
 
 
@@ -644,7 +640,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58495" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "56486" + '/');
 
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);

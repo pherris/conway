@@ -63,7 +63,7 @@ function perform() {
         const point = activePoints.find(coordinate)
         const selectedSiblings: number = activePoints.countOfSelectedSiblings(point)
 
-        if (selectedSiblings < 2 || selectedSiblings > 3) {
+        if (point.selected && (selectedSiblings < 2 || selectedSiblings > 3)) {
             removed.push(point)
         }
 
@@ -73,7 +73,7 @@ function perform() {
         }
 
         // survive
-        if (point.selected && selectedSiblings == 2) {
+        if (point.selected && (selectedSiblings == 2 || selectedSiblings == 3)) {
             surviving.push(point)
         }
     })
@@ -96,7 +96,7 @@ function perform() {
             return x < DOM.COLS && y < DOM.ROWS
         })
     )
-    setTimeout(perform, 250)
+    setTimeout(perform, 0)
 }
 
 // Add the ability to click cells to toggle them on and off

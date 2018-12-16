@@ -35,14 +35,11 @@ export default class ActivePoints {
         point.neighbors().forEach((neighboringCoordinates: bigint[]) => {
             // if our neighbor already exists, we've nothing to do
             if (this.find(neighboringCoordinates)) {
-                console.log('sibling already present, not adding')
                 return
             }
 
-            console.log('sibling added', neighboringCoordinates)
             this.cache.push(new Point(neighboringCoordinates[0], neighboringCoordinates[1], false))
         })
-        console.log(this.cache.length)
     }
 
     // safely removes an item from the cache returning `true` if it succeeds and `false` if it does not
