@@ -2,6 +2,9 @@
 
 This is a typescript implementation transpiled to JS using Parcel (https://parceljs.org).
 
+## Update after end of deadline
+
+I think I sorted it out (in my head) - there should be enough room for the hash approach if I use positive and negative numbers between `-Number.MAX_SAFE_INTEGER` and `Number.MAX_SAFE_INTEGER` to represent the coordinates.  If we refactor to use a hash for lookups, we should solve the performance problems.  An obvious fix but I overlooked it at the time.  AR - 12/17/2018
 
 ## Install
 
