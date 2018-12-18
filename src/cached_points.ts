@@ -30,14 +30,15 @@ export default class CachedPoints {
         }
         this.cache[point.coordinates].selected = point.selected
 
-        point.neighbors().forEach((neighborCoordinates) => {
-            const [[x, x_multiplier], [y, y_multiplier]] = neighborCoordinates
-            // if our neighbor already exists, we've nothing to do
-            const cacheKey = Point.cacheKey(x, x_multiplier, y, y_multiplier)
-            if (this.cache[cacheKey]) {
+        point.neighbors().forEach((neighborCoordinateKey) => {
+            const cachedPoint = this.cache[neighborCoordinateKey]
+
+            if (cachedPoint) {
                 return
             }
-            this.cache[cacheKey] = new Point(x, x_multiplier, y, y_multiplier, false)
+
+            let [x, x_multiplier, y, y_multiplier] = neighborCoordinateKey.split(':')
+            this.cache[neighborCoordinateKey] = new Point(parseInt(x), parseInt(x_multiplier), parseInt(y), parseInt(y_multiplier), false)
         })
     }
 
@@ -57,10 +58,9 @@ export default class CachedPoints {
     // find the siblings of this point and return the total number that are selected
     public countOfSelectedSiblings(point: Point): number {
         // for performance we're going to rely on this guy being in the cache for sure
-        return point.neighbors().filter(neighborCoordinates => {
-            const [[x, x_multiplier], [y, y_multiplier]] = neighborCoordinates
-            const cacheKey = Point.cacheKey(x, x_multiplier, y, y_multiplier)
-            return this.cache[cacheKey] && this.cache[cacheKey].selected
+        return point.neighbors().filter(neighborCoordinateKey => {
+            const cachedPoint = this.cache[neighborCoordinateKey]
+            return cachedPoint && cachedPoint.selected
         }).length
     }
 }

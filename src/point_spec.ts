@@ -26,13 +26,13 @@ describe("Point", () => {
         const bottomRight = neighbors[7]
 
         // wraps both x and y
-        expect(topLeft).toEqual([[Point.MAX, Point.MAX_MULTIPLIER], [Point.MAX, Point.MAX_MULTIPLIER]])
-        expect(top).toEqual([[Point.MIN, 1], [Point.MAX, Point.MAX_MULTIPLIER]])
-        expect(topRight).toEqual([[1, 1], [Point.MAX, Point.MAX_MULTIPLIER]])
-        expect(left).toEqual([[Point.MAX, Point.MAX_MULTIPLIER], [Point.MIN, 1]])
-        expect(right).toEqual([[1, 1], [0, 1]])
-        expect(bottomLeft).toEqual([[Point.MAX, Point.MAX_MULTIPLIER], [1, 1]])
-        expect(bottom).toEqual([[Point.MIN, 1], [1, 1]])
-        expect(bottomRight).toEqual([[1, 1], [1, 1]])
+        expect(topLeft).toEqual([Point.MAX, Point.MAX_MULTIPLIER, Point.MAX, Point.MAX_MULTIPLIER].join(':'))
+        expect(top).toEqual([Point.MIN, 1, Point.MAX, Point.MAX_MULTIPLIER].join(':'))
+        expect(topRight).toEqual([1, 1, Point.MAX, Point.MAX_MULTIPLIER].join(':'))
+        expect(left).toEqual([Point.MAX, Point.MAX_MULTIPLIER, Point.MIN, 1].join(':'))
+        expect(right).toEqual([1, 1, 0, 1].join(':'))
+        expect(bottomLeft).toEqual([Point.MAX, Point.MAX_MULTIPLIER, 1, 1].join(':'))
+        expect(bottom).toEqual([Point.MIN, 1, 1, 1].join(':'))
+        expect(bottomRight).toEqual([1, 1, 1, 1].join(':'))
     });
 });

@@ -30,6 +30,8 @@ Tests:
 
 This implementation ultimately is not suitable for as large a galaxy as implemented (assuming patterns that create a virtually unbounded number of selected squares).  The performance of this application degrades in exponentially in relationship to the number of objects created.  Moving to a hashed lookup would improve performance greatly.
 
+UPDATE: moving to a hash lookup improved performance, however the implementation seems to still be lacking due to degredated performance over time... a longer time to be sure, but still degrades and would be impractical to run for any length of time.
+
 Benchmarking
 
 - 500 frames, 62839ms

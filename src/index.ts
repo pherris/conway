@@ -55,7 +55,7 @@ function syncUi(addedPoints: Array<Point>, removedPoints: Array<Point>): void {
             }, [])
 
         started = 0
-        runTime.innerText = `${runTime.innerText}ms. ${cachedPoints.cached.length} items in cache`
+        runTime.innerText = `${runTime.innerText}ms. ${Object.keys(cachedPoints.cached).length} items in cache`
         currentState.querySelector('pre').innerText = JSON.stringify(selectedPoints, null, 2)
     }
 }

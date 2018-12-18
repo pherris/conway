@@ -212,54 +212,64 @@ function () {
     this.y = y;
     this.x_multiplier = x_multiplier;
     this.y_multiplier = y_multiplier;
-    this.selected = selected;
+    this.selected = selected; // cache some of the lookups
+
+    this.topLeftKey = this.topLeftNeighbor().join(':');
+    this.topKey = this.topNeighbor().join(':');
+    this.topRightKey = this.topRightNeighbor().join(':');
+    this.leftKey = this.leftNeighbor().join(':');
+    this.rightKey = this.rightNeighbor().join(':');
+    this.bottomLeftKey = this.bottomLeftNeighbor().join(':');
+    this.bottomKey = this.bottomNeighbor().join(':');
+    this.bottomRightKey = this.bottomRightNeighbor().join(':');
+    this.key = [this.x, this.x_multiplier, this.y, this.y_multiplier].join(':');
   }
 
   _createClass(Point, [{
     key: "neighbors",
     // the helpers return [[x, x_multiplier], [y, y_multiplier]]
     value: function neighbors() {
-      return [this.topLeftNeighbor(), this.topNeighbor(), this.topRightNeighbor(), this.leftNeighbor(), this.rightNeighbor(), this.bottomLeftNeighbor(), this.bottomNeighbor(), this.bottomRightNeighbor()];
+      return [this.topLeftKey, this.topKey, this.topRightKey, this.leftKey, this.rightKey, this.bottomLeftKey, this.bottomKey, this.bottomRightKey];
     }
   }, {
     key: "bottomLeftNeighbor",
     value: function bottomLeftNeighbor() {
-      return [this.nextLowerCoordinate(this.x, this.x_multiplier), this.nextHigherCoordinate(this.y, this.y_multiplier)];
+      return this.nextLowerCoordinate(this.x, this.x_multiplier).concat(this.nextHigherCoordinate(this.y, this.y_multiplier));
     }
   }, {
     key: "bottomNeighbor",
     value: function bottomNeighbor() {
-      return [[this.x, this.x_multiplier], this.nextHigherCoordinate(this.y, this.y_multiplier)];
+      return [this.x, this.x_multiplier].concat(this.nextHigherCoordinate(this.y, this.y_multiplier));
     }
   }, {
     key: "bottomRightNeighbor",
     value: function bottomRightNeighbor() {
-      return [this.nextHigherCoordinate(this.x, this.x_multiplier), this.nextHigherCoordinate(this.y, this.y_multiplier)];
+      return this.nextHigherCoordinate(this.x, this.x_multiplier).concat(this.nextHigherCoordinate(this.y, this.y_multiplier));
     }
   }, {
     key: "leftNeighbor",
     value: function leftNeighbor() {
-      return [this.nextLowerCoordinate(this.x, this.x_multiplier), [this.y, this.y_multiplier]];
+      return this.nextLowerCoordinate(this.x, this.x_multiplier).concat([this.y, this.y_multiplier]);
     }
   }, {
     key: "rightNeighbor",
     value: function rightNeighbor() {
-      return [this.nextHigherCoordinate(this.x, this.x_multiplier), [this.y, this.y_multiplier]];
+      return this.nextHigherCoordinate(this.x, this.x_multiplier).concat([this.y, this.y_multiplier]);
     }
   }, {
     key: "topLeftNeighbor",
     value: function topLeftNeighbor() {
-      return [this.nextLowerCoordinate(this.x, this.x_multiplier), this.nextLowerCoordinate(this.y, this.y_multiplier)];
+      return this.nextLowerCoordinate(this.x, this.x_multiplier).concat(this.nextLowerCoordinate(this.y, this.y_multiplier));
     }
   }, {
     key: "topNeighbor",
     value: function topNeighbor() {
-      return [[this.x, this.x_multiplier], this.nextLowerCoordinate(this.y, this.y_multiplier)];
+      return [this.x, this.x_multiplier].concat(this.nextLowerCoordinate(this.y, this.y_multiplier));
     }
   }, {
     key: "topRightNeighbor",
     value: function topRightNeighbor() {
-      return [this.nextHigherCoordinate(this.x, this.x_multiplier), this.nextLowerCoordinate(this.y, this.y_multiplier)];
+      return this.nextHigherCoordinate(this.x, this.x_multiplier).concat(this.nextLowerCoordinate(this.y, this.y_multiplier));
     }
   }, {
     key: "nextHigherCoordinate",
@@ -296,12 +306,7 @@ function () {
   }, {
     key: "coordinates",
     get: function get() {
-      return Point.cacheKey(this.x, this.x_multiplier, this.y, this.y_multiplier);
-    }
-  }], [{
-    key: "cacheKey",
-    value: function cacheKey(x, x_multiplier, y, y_multiplier) {
-      return [x, x_multiplier, y, y_multiplier].join(':');
+      return this.key;
     }
   }]);
 
@@ -365,23 +370,21 @@ function () {
       }
 
       this.cache[point.coordinates].selected = point.selected;
-      point.neighbors().forEach(function (neighborCoordinates) {
-        var _neighborCoordinates = _slicedToArray(neighborCoordinates, 2),
-            _neighborCoordinates$ = _slicedToArray(_neighborCoordinates[0], 2),
-            x = _neighborCoordinates$[0],
-            x_multiplier = _neighborCoordinates$[1],
-            _neighborCoordinates$2 = _slicedToArray(_neighborCoordinates[1], 2),
-            y = _neighborCoordinates$2[0],
-            y_multiplier = _neighborCoordinates$2[1]; // if our neighbor already exists, we've nothing to do
+      point.neighbors().forEach(function (neighborCoordinateKey) {
+        var cachedPoint = _this.cache[neighborCoordinateKey];
 
-
-        var cacheKey = _point.default.cacheKey(x, x_multiplier, y, y_multiplier);
-
-        if (_this.cache[cacheKey]) {
+        if (cachedPoint) {
           return;
         }
 
-        _this.cache[cacheKey] = new _point.default(x, x_multiplier, y, y_multiplier, false);
+        var _neighborCoordinateKe = neighborCoordinateKey.split(':'),
+            _neighborCoordinateKe2 = _slicedToArray(_neighborCoordinateKe, 4),
+            x = _neighborCoordinateKe2[0],
+            x_multiplier = _neighborCoordinateKe2[1],
+            y = _neighborCoordinateKe2[2],
+            y_multiplier = _neighborCoordinateKe2[3];
+
+        _this.cache[neighborCoordinateKey] = new _point.default(parseInt(x), parseInt(x_multiplier), parseInt(y), parseInt(y_multiplier), false);
       });
     } // removes an item from the cache and adds to the removed list
 
@@ -404,18 +407,9 @@ function () {
       var _this2 = this;
 
       // for performance we're going to rely on this guy being in the cache for sure
-      return point.neighbors().filter(function (neighborCoordinates) {
-        var _neighborCoordinates2 = _slicedToArray(neighborCoordinates, 2),
-            _neighborCoordinates3 = _slicedToArray(_neighborCoordinates2[0], 2),
-            x = _neighborCoordinates3[0],
-            x_multiplier = _neighborCoordinates3[1],
-            _neighborCoordinates4 = _slicedToArray(_neighborCoordinates2[1], 2),
-            y = _neighborCoordinates4[0],
-            y_multiplier = _neighborCoordinates4[1];
-
-        var cacheKey = _point.default.cacheKey(x, x_multiplier, y, y_multiplier);
-
-        return _this2.cache[cacheKey] && _this2.cache[cacheKey].selected;
+      return point.neighbors().filter(function (neighborCoordinateKey) {
+        var cachedPoint = _this2.cache[neighborCoordinateKey];
+        return cachedPoint && cachedPoint.selected;
       }).length;
     }
   }, {
@@ -597,7 +591,7 @@ function syncUi(addedPoints, removedPoints) {
       return accumulator;
     }, []);
     started = 0;
-    runTime.innerText = "".concat(runTime.innerText, "ms. ").concat(cachedPoints.cached.length, " items in cache");
+    runTime.innerText = "".concat(runTime.innerText, "ms. ").concat(Object.keys(cachedPoints.cached).length, " items in cache");
     currentState.querySelector('pre').innerText = JSON.stringify(selectedPoints, null, 2);
   }
 }
@@ -692,7 +686,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "60822" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50711" + '/');
 
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);

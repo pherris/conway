@@ -8,11 +8,16 @@ export default class Point {
     private y: number
     private x_multiplier: number
     private y_multiplier: number
+    private topLeftKey: string
+    private topKey: string
+    private topRightKey: string
+    private leftKey: string
+    private rightKey: string
+    private bottomLeftKey: string
+    private bottomKey: string
+    private bottomRightKey: string
+    private key: string
     public selected: boolean
-
-    static cacheKey(x, x_multiplier, y, y_multiplier): string {
-        return [x, x_multiplier, y, y_multiplier].join(':')
-    }
 
     constructor(x: number, x_multiplier: number, y: number, y_multiplier: number, selected: boolean) {
         this.x = x;
@@ -20,56 +25,68 @@ export default class Point {
         this.x_multiplier = x_multiplier
         this.y_multiplier = y_multiplier
         this.selected = selected;
+
+        // cache some of the lookups
+        this.topLeftKey = this.topLeftNeighbor().join(':')
+        this.topKey = this.topNeighbor().join(':')
+        this.topRightKey = this.topRightNeighbor().join(':')
+        this.leftKey = this.leftNeighbor().join(':')
+        this.rightKey = this.rightNeighbor().join(':')
+        this.bottomLeftKey = this.bottomLeftNeighbor().join(':')
+        this.bottomKey = this.bottomNeighbor().join(':')
+        this.bottomRightKey = this.bottomRightNeighbor().join(':')
+
+        this.key = [this.x, this.x_multiplier, this.y, this.y_multiplier].join(':')
     }
 
     get coordinates(): string {
-        return Point.cacheKey(this.x, this.x_multiplier, this.y, this.y_multiplier)
+        return this.key
     }
 
     // the helpers return [[x, x_multiplier], [y, y_multiplier]]
-    neighbors(): Array<Array<Array<number>>> {
+    neighbors(): Array<string> {
         return [
-            this.topLeftNeighbor(),
-            this.topNeighbor(),
-            this.topRightNeighbor(),
-            this.leftNeighbor(),
-            this.rightNeighbor(),
-            this.bottomLeftNeighbor(),
-            this.bottomNeighbor(),
-            this.bottomRightNeighbor()
+            this.topLeftKey,
+            this.topKey,
+            this.topRightKey,
+            this.leftKey,
+            this.rightKey,
+            this.bottomLeftKey,
+            this.bottomKey,
+            this.bottomRightKey
         ]
     }
 
-    private bottomLeftNeighbor(): Array<Array<number>> {
-        return [this.nextLowerCoordinate(this.x, this.x_multiplier), this.nextHigherCoordinate(this.y, this.y_multiplier)]
+    private bottomLeftNeighbor(): Array<number> {
+        return this.nextLowerCoordinate(this.x, this.x_multiplier).concat(this.nextHigherCoordinate(this.y, this.y_multiplier))
     }
 
-    private bottomNeighbor(): Array<Array<number>> {
-        return [[this.x, this.x_multiplier], this.nextHigherCoordinate(this.y, this.y_multiplier)]
+    private bottomNeighbor(): Array<number> {
+        return [this.x, this.x_multiplier].concat(this.nextHigherCoordinate(this.y, this.y_multiplier))
     }
 
-    private bottomRightNeighbor(): Array<Array<number>> {
-        return [this.nextHigherCoordinate(this.x, this.x_multiplier), this.nextHigherCoordinate(this.y, this.y_multiplier)]
+    private bottomRightNeighbor(): Array<number> {
+        return this.nextHigherCoordinate(this.x, this.x_multiplier).concat(this.nextHigherCoordinate(this.y, this.y_multiplier))
     }
 
-    private leftNeighbor(): Array<Array<number>> {
-        return [this.nextLowerCoordinate(this.x, this.x_multiplier), [this.y, this.y_multiplier]]
+    private leftNeighbor(): Array<number> {
+        return this.nextLowerCoordinate(this.x, this.x_multiplier).concat([this.y, this.y_multiplier])
     }
 
-    private rightNeighbor(): Array<Array<number>> {
-        return [this.nextHigherCoordinate(this.x, this.x_multiplier), [this.y, this.y_multiplier]]
+    private rightNeighbor(): Array<number> {
+        return this.nextHigherCoordinate(this.x, this.x_multiplier).concat([this.y, this.y_multiplier])
     }
 
-    private topLeftNeighbor(): Array<Array<number>> {
-        return [this.nextLowerCoordinate(this.x, this.x_multiplier), this.nextLowerCoordinate(this.y, this.y_multiplier)]
+    private topLeftNeighbor(): Array<number> {
+        return this.nextLowerCoordinate(this.x, this.x_multiplier).concat(this.nextLowerCoordinate(this.y, this.y_multiplier))
     }
 
-    private topNeighbor(): Array<Array<number>> {
-        return [[this.x, this.x_multiplier], this.nextLowerCoordinate(this.y, this.y_multiplier)]
+    private topNeighbor(): Array<number> {
+        return [this.x, this.x_multiplier].concat(this.nextLowerCoordinate(this.y, this.y_multiplier))
     }
 
-    private topRightNeighbor(): Array<Array<number>> {
-        return [this.nextHigherCoordinate(this.x, this.x_multiplier), this.nextLowerCoordinate(this.y, this.y_multiplier)]
+    private topRightNeighbor(): Array<number> {
+        return this.nextHigherCoordinate(this.x, this.x_multiplier).concat(this.nextLowerCoordinate(this.y, this.y_multiplier))
     }
 
     private nextHigherCoordinate(coord: number, multiplier: number): Array<number> {
