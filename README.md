@@ -39,3 +39,5 @@ Benchmarking
 - 500 frames, 60305ms
 - optimization 3 don't serialize json on every frame
 - 500 frames, 57464ms
+- Moved to the hash lookup
+- 500 frames, 9750ms

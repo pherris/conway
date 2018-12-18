@@ -1,0 +1,27 @@
+#run-container {
+  display: flex;
+}
+#run-container > div {
+  flex: 0 0 796px;
+  height: 796px;
+  overflow: scroll;
+}
+#run-container > div pre {
+  padding-left: 20px;
+}
+#run-container #input > div {
+  display: flex;
+}
+#run-container #input .cell {
+  flex: 0 0 6px;
+  height: 6px;
+  width: 6px;
+  border: 1px solid black;
+}
+#run-container #input .cell:hover {
+  cursor: pointer;
+  background-color: gray;
+}
+#run-container #input .cell.selected {
+  background-color: black;
+}

@@ -4,11 +4,11 @@ export default class Point {
     static MAX: number = Number.MAX_SAFE_INTEGER // 0 counts
     static MAX_MULTIPLIER: number = 2048 // there are 2048 of Number.MAX_SAFE_INTEGER in 2^64
 
-    private x: number;
-    private y: number;
-    private x_multiplier: number;
-    private y_multiplier: number;
-    public selected: boolean;
+    private x: number
+    private y: number
+    private x_multiplier: number
+    private y_multiplier: number
+    public selected: boolean
 
     static cacheKey(x, x_multiplier, y, y_multiplier): string {
         return [x, x_multiplier, y, y_multiplier].join(':')
