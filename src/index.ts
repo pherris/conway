@@ -16,45 +16,44 @@ let frameCount: number = 0
 const cachedPoints = new CachedPoints()
 let started: number = 0
 
-function addPoint(coordinates: bigint[], selected: boolean): void {
-    const existingCachedItem = cachedPoints.find(coordinates)
-
-    let point: Point
-
-    if (existingCachedItem) {
-        existingCachedItem.selected = !existingCachedItem.selected
-        point = existingCachedItem
-    } else {
-        point = new Point(coordinates[0], coordinates[1], selected)
-    }
-
+function addPoint(coordinates: number[], selected: boolean): void {
+    const point: Point = new Point(coordinates[0], 1, coordinates[1], 1, selected)
     cachedPoints.addOrUpdate(point)
 }
 
 // This method determines if the UI contains any of the active points and displays them, it also serializes the cache into the textarea
-function syncUi(visibleAddedPoints: Array<Point>, visibleRemovedPoints: Array<Point>): void {
-    visibleAddedPoints.forEach(point => {
-        const cell = getCellFromCoordinates(point.coordinates[0].toString(), point.coordinates[1].toString())
-        selectCell(cell)
+function syncUi(addedPoints: Array<Point>, removedPoints: Array<Point>): void {
+    addedPoints.forEach(point => {
+        const [x, x_multiplier, y, y_multiplier] = point.coordinates.split(':')
+        const cell = getCellFromCoordinates(x.toString(), y.toString())
+
+        if (point.selected && parseInt(x) < DOM.COLS && parseInt(y) < DOM.ROWS) {
+            selectCell(cell)
+        }
     })
 
-    visibleRemovedPoints.forEach(point => {
-        const cell = getCellFromCoordinates(point.coordinates[0].toString(), point.coordinates[1].toString())
-        deselectCell(cell)
-    })
+    removedPoints.forEach(point => {
+        const [x, x_multiplier, y, y_multiplier] = point.coordinates.split(':')
+        const cell = getCellFromCoordinates(x.toString(), y.toString())
 
-    const selectedPoints = cachedPoints.cached
-        .filter(coordinates => cachedPoints.find(coordinates).selected)
-        .reduce((accumulator: string[][], coordinates) => {
-            accumulator.push([coordinates[0].toString(), coordinates[1].toString()])
-            return accumulator
-        }, [])
+        if (point.selected && parseInt(x) < DOM.COLS && parseInt(y) < DOM.ROWS) {
+            deselectCell(cell)
+        }
+    })
 
     frameContainer.innerText = (frameCount++).toString()
     runTime.innerText = (Date.now() - started).toString()
 
     // let the user see how long things took after every 500 frames
     if (frameCount % 500 === 0) {
+        const selectedPoints = Object.values(cachedPoints.cached)
+            .filter(point => point.selected)
+            .reduce((accumulator: string[][], point) => {
+                const [x, x_multiplier, y, y_multiplier] = point.coordinates.split(':')
+                accumulator.push([x, y])
+                return accumulator
+            }, [])
+
         started = 0
         runTime.innerText = `${runTime.innerText}ms. ${cachedPoints.cached.length} items in cache`
         currentState.querySelector('pre').innerText = JSON.stringify(selectedPoints, null, 2)
@@ -71,7 +70,7 @@ function perform() {
     const removed = []
     const surviving = []
 
-    cachedPoints.cache.forEach(point => {
+    Object.values(cachedPoints.cached).forEach(point => {
         const selectedSiblings: number = cachedPoints.countOfSelectedSiblings(point)
 
         if (point.selected && (selectedSiblings < 2 || selectedSiblings > 3)) {
@@ -89,25 +88,14 @@ function perform() {
         }
     })
 
+
     removed.forEach(point => cachedPoints.remove(point))
 
     added.concat(surviving).forEach(point => (point.selected = true) && cachedPoints.addOrUpdate(point))
 
     cachedPoints.cleanRemoved()
 
-    syncUi(
-        added.filter(point => {
-            let x = point.coordinates[0]
-            let y = point.coordinates[1]
-            return point.selected && x < DOM.COLS && y < DOM.ROWS
-        }),
-
-        removed.filter(point => {
-            let x = point.coordinates[0]
-            let y = point.coordinates[1]
-            return x < DOM.COLS && y < DOM.ROWS
-        })
-    )
+    syncUi(added, removed)
 
     setTimeout(perform, 0)
 }

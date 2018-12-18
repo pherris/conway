@@ -1,28 +1,33 @@
 // represents a point in the grid which is aware of the coordinates of each of its neighbors
 export default class Point {
-    private MIN: bigint = BigInt(0);
-    private MAX: bigint = BigInt(18446744073709551616);
+    static MIN: number = 0
+    static MAX: number = Number.MAX_SAFE_INTEGER // 0 counts
+    static MAX_MULTIPLIER: number = 2048 // there are 2048 of Number.MAX_SAFE_INTEGER in 2^64
 
-    private x: bigint;
-    private y: bigint;
+    private x: number;
+    private y: number;
+    private x_multiplier: number;
+    private y_multiplier: number;
     public selected: boolean;
-    private _neighborCache: Array<Point> = []
 
-    constructor(x: bigint, y: bigint, selected: boolean) {
+    static cacheKey(x, x_multiplier, y, y_multiplier): string {
+        return [x, x_multiplier, y, y_multiplier].join(':')
+    }
+
+    constructor(x: number, x_multiplier: number, y: number, y_multiplier: number, selected: boolean) {
         this.x = x;
         this.y = y;
+        this.x_multiplier = x_multiplier
+        this.y_multiplier = y_multiplier
         this.selected = selected;
     }
 
-    get coordinates(): bigint[] {
-        return [this.x, this.y]
+    get coordinates(): string {
+        return Point.cacheKey(this.x, this.x_multiplier, this.y, this.y_multiplier)
     }
 
-    get neighborCache(): Array<Point> {
-        return this._neighborCache
-    }
-
-    neighbors(): bigint[][] {
+    // the helpers return [[x, x_multiplier], [y, y_multiplier]]
+    neighbors(): Array<Array<Array<number>>> {
         return [
             this.topLeftNeighbor(),
             this.topNeighbor(),
@@ -35,43 +40,63 @@ export default class Point {
         ]
     }
 
-    private bottomLeftNeighbor(): Array<bigint> {
-        return [this.nextLowerCoordinate(this.x), this.nextHigherCoordinate(this.y)]
+    private bottomLeftNeighbor(): Array<Array<number>> {
+        return [this.nextLowerCoordinate(this.x, this.x_multiplier), this.nextHigherCoordinate(this.y, this.y_multiplier)]
     }
 
-    private bottomNeighbor(): Array<bigint> {
-        return [this.x, this.nextHigherCoordinate(this.y)]
+    private bottomNeighbor(): Array<Array<number>> {
+        return [[this.x, this.x_multiplier], this.nextHigherCoordinate(this.y, this.y_multiplier)]
     }
 
-    private bottomRightNeighbor(): Array<bigint> {
-        return [this.nextHigherCoordinate(this.x), this.nextHigherCoordinate(this.y)]
+    private bottomRightNeighbor(): Array<Array<number>> {
+        return [this.nextHigherCoordinate(this.x, this.x_multiplier), this.nextHigherCoordinate(this.y, this.y_multiplier)]
     }
 
-    private leftNeighbor(): Array<bigint> {
-        return [this.nextLowerCoordinate(this.x), this.y]
+    private leftNeighbor(): Array<Array<number>> {
+        return [this.nextLowerCoordinate(this.x, this.x_multiplier), [this.y, this.y_multiplier]]
     }
 
-    private rightNeighbor(): Array<bigint> {
-        return [this.nextHigherCoordinate(this.x), this.y]
+    private rightNeighbor(): Array<Array<number>> {
+        return [this.nextHigherCoordinate(this.x, this.x_multiplier), [this.y, this.y_multiplier]]
     }
 
-    private topLeftNeighbor(): Array<bigint> {
-        return [this.nextLowerCoordinate(this.x), this.nextLowerCoordinate(this.y)]
+    private topLeftNeighbor(): Array<Array<number>> {
+        return [this.nextLowerCoordinate(this.x, this.x_multiplier), this.nextLowerCoordinate(this.y, this.y_multiplier)]
     }
 
-    private topNeighbor(): Array<bigint> {
-        return [this.x, this.nextLowerCoordinate(this.y)]
+    private topNeighbor(): Array<Array<number>> {
+        return [[this.x, this.x_multiplier], this.nextLowerCoordinate(this.y, this.y_multiplier)]
     }
 
-    private topRightNeighbor(): Array<bigint> {
-        return [this.nextHigherCoordinate(this.x), this.nextLowerCoordinate(this.y)]
+    private topRightNeighbor(): Array<Array<number>> {
+        return [this.nextHigherCoordinate(this.x, this.x_multiplier), this.nextLowerCoordinate(this.y, this.y_multiplier)]
     }
 
-    private nextHigherCoordinate(coord: bigint): bigint {
-        return (coord == this.MAX) ? this.MIN : coord + BigInt(1)
+    private nextHigherCoordinate(coord: number, multiplier: number): Array<number> {
+        if (coord == Point.MAX) {
+            multiplier = multiplier + 1
+            coord = Point.MIN
+        } else {
+            coord = coord + 1
+        }
+
+        if (multiplier > Point.MAX_MULTIPLIER) {
+            multiplier = 0
+        }
+        return [coord, multiplier]
     }
 
-    private nextLowerCoordinate(coord: bigint): bigint {
-        return (coord == this.MIN) ? this.MAX : coord - BigInt(1)
+    private nextLowerCoordinate(coord: number, multiplier: number): Array<number> {
+        if (coord == Point.MIN) {
+            multiplier = multiplier - 1
+            coord = Point.MAX
+        } else {
+            coord = coord - 1
+        }
+
+        if (multiplier <= 0) {
+            multiplier = Point.MAX_MULTIPLIER
+        }
+        return [coord, multiplier]
     }
 }

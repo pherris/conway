@@ -1,84 +1,66 @@
 import Point from "./point";
 
 export default class CachedPoints {
-    // We're going to use an array to hold the active points and use the slower `find` approach to pull back each item we
-    // are interested in.  The preference would be to use a hash where the key was an array of the `x` and `y` coordinates
-    // which would make lookup very snappy, however I found I cannot use an object as they key in Typescript and I cannot 
-    // serialize the larger numbers without losing percision. 
-
-    // If speed is important or this approach proves itself to be too slow, I would move this structure onto a language 
-    // where the map approach was possible - probably shouldve picked Ruby...
-
-    cache: Array<Point> = []
-    private _removed: Array<Point> = []
+    cache: Record<string, Point> = {}
+    private _removed: Record<string, Point> = {}
 
     constructor() { }
 
-    get cached(): bigint[][] {
-        return this.cache.map(point => point.coordinates)
+    get cached(): Record<string, Point> {
+        return this.cache
     }
 
-    get removedItems(): bigint[][] {
-        return this._removed.map(point => point.coordinates)
+    get visibleItems(): Object {
+        // TODO hold visible ones and return them
+        return {}
+    }
+
+    get removedItems(): Object {
+        return this._removed
     }
 
     public cleanRemoved(): void {
-        this._removed = []
+        this._removed = {}
     }
 
     // add an item into the cache, has a side effect of hydrating siblings - could be more of a pure function
     public addOrUpdate(point: Point): void {
-        const existingPoint = this.find(point.coordinates)
-        if (!existingPoint) {
-            this.cache.push(point)
-        } else {
-            existingPoint.selected = point.selected
+        if (!this.cache[point.coordinates]) {
+            this.cache[point.coordinates] = point
         }
+        this.cache[point.coordinates].selected = point.selected
 
-        point.neighbors().forEach((neighboringCoordinates: bigint[]) => {
+        point.neighbors().forEach((neighborCoordinates) => {
+            const [[x, x_multiplier], [y, y_multiplier]] = neighborCoordinates
             // if our neighbor already exists, we've nothing to do
-            if (this.find(neighboringCoordinates)) {
+            const cacheKey = Point.cacheKey(x, x_multiplier, y, y_multiplier)
+            if (this.cache[cacheKey]) {
                 return
             }
-
-            this.cache.push(new Point(neighboringCoordinates[0], neighboringCoordinates[1], false))
+            this.cache[cacheKey] = new Point(x, x_multiplier, y, y_multiplier, false)
         })
     }
 
-    // safely removes an item from the cache returning `true` if it succeeds and `false` if it does not
+    // removes an item from the cache and adds to the removed list
     public remove(point: Point): boolean {
-        const indexToRemove = this.findIndexInCache(point.coordinates)
-        if (indexToRemove == -1) {
+        this.cache[point.coordinates]
+
+        if (!this.cache[point.coordinates]) {
             return false
         }
 
-        this._removed.push(this.cache.splice(indexToRemove, 1)[0])
-        return true
-    }
+        this._removed[point.coordinates] = point
 
-    // get the cached item if it exists
-    public find(coordinates: bigint[]): Point {
-        const index = this.findIndexInCache(coordinates)
-        if (index == -1) return null;
-        return this.cache[index]
+        return delete this.cache[point.coordinates]
     }
 
     // find the siblings of this point and return the total number that are selected
     public countOfSelectedSiblings(point: Point): number {
         // for performance we're going to rely on this guy being in the cache for sure
-        return point.neighbors().filter(coordinates => {
-            const neighboringIndex = this.findIndexInCache(coordinates)
-            return neighboringIndex > -1 && this.cache[neighboringIndex].selected
+        return point.neighbors().filter(neighborCoordinates => {
+            const [[x, x_multiplier], [y, y_multiplier]] = neighborCoordinates
+            const cacheKey = Point.cacheKey(x, x_multiplier, y, y_multiplier)
+            return this.cache[cacheKey] && this.cache[cacheKey].selected
         }).length
-    }
-
-    // returns the index of the object you seek
-    private findIndexInCache(coordinates: bigint[]): number {
-        let x
-        let y
-        [x, y] = coordinates
-        return this.cache.findIndex(point => {
-            return point.coordinates[0] == x && point.coordinates[1] == y
-        })
     }
 }

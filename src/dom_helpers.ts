@@ -1,6 +1,6 @@
 export const DOM = {
-    ROWS: BigInt(100),
-    COLS: BigInt(100)
+    ROWS: 100,
+    COLS: 100
 }
 
 // create the grid cells
@@ -10,11 +10,11 @@ export function createGrid(inputWrapper): void {
     // clean up just in case
     inputWrapper.childNodes.forEach((node) => node.remove())
 
-    for (let y = BigInt(0); y < DOM.ROWS; y++) {
+    for (let y = 0; y < DOM.ROWS; y++) {
         const row = document.createElement('div')
         row.setAttribute('data-row', y.toString())
         inputWrapper.appendChild(row)
-        for (let x = BigInt(0); x < DOM.COLS; x++) {
+        for (let x = 0; x < DOM.COLS; x++) {
             const clickableElement = document.createElement('div')
             clickableElement.classList.add('cell')
             clickableElement.setAttribute('data-x', x.toString());
@@ -26,7 +26,7 @@ export function createGrid(inputWrapper): void {
 
 }
 
-export function toggleSelected(cell): bigint[] {
+export function toggleSelected(cell): number[] {
     if (cellIsSelected(cell)) {
         deselectCell(cell)
     } else {
@@ -56,8 +56,8 @@ export function cellIsSelected(cell): boolean {
     return cell.classList.contains('selected')
 }
 
-export function getCellCoordinates(cell): bigint[] {
-    return [BigInt(cell.getAttribute('data-x')), BigInt(cell.getAttribute('data-y'))]
+export function getCellCoordinates(cell): number[] {
+    return [parseInt(cell.getAttribute('data-x')), parseInt(cell.getAttribute('data-y'))]
 }
 
 export function getCellFromCoordinates(x: string, y: string) {

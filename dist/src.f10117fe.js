@@ -120,8 +120,8 @@ exports.getCellCoordinates = getCellCoordinates;
 exports.getCellFromCoordinates = getCellFromCoordinates;
 exports.DOM = void 0;
 var DOM = {
-  ROWS: BigInt(100),
-  COLS: BigInt(100)
+  ROWS: 100,
+  COLS: 100
 }; // create the grid cells
 
 exports.DOM = DOM;
@@ -133,12 +133,12 @@ function createGrid(inputWrapper) {
     return node.remove();
   });
 
-  for (var y = BigInt(0); y < DOM.ROWS; y++) {
+  for (var y = 0; y < DOM.ROWS; y++) {
     var row = document.createElement('div');
     row.setAttribute('data-row', y.toString());
     inputWrapper.appendChild(row);
 
-    for (var x = BigInt(0); x < DOM.COLS; x++) {
+    for (var x = 0; x < DOM.COLS; x++) {
       var clickableElement = document.createElement('div');
       clickableElement.classList.add('cell');
       clickableElement.setAttribute('data-x', x.toString());
@@ -181,7 +181,7 @@ function cellIsSelected(cell) {
 }
 
 function getCellCoordinates(cell) {
-  return [BigInt(cell.getAttribute('data-x')), BigInt(cell.getAttribute('data-y'))];
+  return [parseInt(cell.getAttribute('data-x')), parseInt(cell.getAttribute('data-y'))];
 }
 
 function getCellFromCoordinates(x, y) {
@@ -205,81 +205,103 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 var Point =
 /*#__PURE__*/
 function () {
-  function Point(x, y, selected) {
+  function Point(x, x_multiplier, y, y_multiplier, selected) {
     _classCallCheck(this, Point);
 
-    this.MIN = BigInt(0);
-    this.MAX = BigInt(18446744073709551616);
-    this._neighborCache = [];
     this.x = x;
     this.y = y;
+    this.x_multiplier = x_multiplier;
+    this.y_multiplier = y_multiplier;
     this.selected = selected;
   }
 
   _createClass(Point, [{
     key: "neighbors",
+    // the helpers return [[x, x_multiplier], [y, y_multiplier]]
     value: function neighbors() {
       return [this.topLeftNeighbor(), this.topNeighbor(), this.topRightNeighbor(), this.leftNeighbor(), this.rightNeighbor(), this.bottomLeftNeighbor(), this.bottomNeighbor(), this.bottomRightNeighbor()];
     }
   }, {
     key: "bottomLeftNeighbor",
     value: function bottomLeftNeighbor() {
-      return [this.nextLowerCoordinate(this.x), this.nextHigherCoordinate(this.y)];
+      return [this.nextLowerCoordinate(this.x, this.x_multiplier), this.nextHigherCoordinate(this.y, this.y_multiplier)];
     }
   }, {
     key: "bottomNeighbor",
     value: function bottomNeighbor() {
-      return [this.x, this.nextHigherCoordinate(this.y)];
+      return [[this.x, this.x_multiplier], this.nextHigherCoordinate(this.y, this.y_multiplier)];
     }
   }, {
     key: "bottomRightNeighbor",
     value: function bottomRightNeighbor() {
-      return [this.nextHigherCoordinate(this.x), this.nextHigherCoordinate(this.y)];
+      return [this.nextHigherCoordinate(this.x, this.x_multiplier), this.nextHigherCoordinate(this.y, this.y_multiplier)];
     }
   }, {
     key: "leftNeighbor",
     value: function leftNeighbor() {
-      return [this.nextLowerCoordinate(this.x), this.y];
+      return [this.nextLowerCoordinate(this.x, this.x_multiplier), [this.y, this.y_multiplier]];
     }
   }, {
     key: "rightNeighbor",
     value: function rightNeighbor() {
-      return [this.nextHigherCoordinate(this.x), this.y];
+      return [this.nextHigherCoordinate(this.x, this.x_multiplier), [this.y, this.y_multiplier]];
     }
   }, {
     key: "topLeftNeighbor",
     value: function topLeftNeighbor() {
-      return [this.nextLowerCoordinate(this.x), this.nextLowerCoordinate(this.y)];
+      return [this.nextLowerCoordinate(this.x, this.x_multiplier), this.nextLowerCoordinate(this.y, this.y_multiplier)];
     }
   }, {
     key: "topNeighbor",
     value: function topNeighbor() {
-      return [this.x, this.nextLowerCoordinate(this.y)];
+      return [[this.x, this.x_multiplier], this.nextLowerCoordinate(this.y, this.y_multiplier)];
     }
   }, {
     key: "topRightNeighbor",
     value: function topRightNeighbor() {
-      return [this.nextHigherCoordinate(this.x), this.nextLowerCoordinate(this.y)];
+      return [this.nextHigherCoordinate(this.x, this.x_multiplier), this.nextLowerCoordinate(this.y, this.y_multiplier)];
     }
   }, {
     key: "nextHigherCoordinate",
-    value: function nextHigherCoordinate(coord) {
-      return coord == this.MAX ? this.MIN : coord + BigInt(1);
+    value: function nextHigherCoordinate(coord, multiplier) {
+      if (coord == Point.MAX) {
+        multiplier = multiplier + 1;
+        coord = Point.MIN;
+      } else {
+        coord = coord + 1;
+      }
+
+      if (multiplier > Point.MAX_MULTIPLIER) {
+        multiplier = 0;
+      }
+
+      return [coord, multiplier];
     }
   }, {
     key: "nextLowerCoordinate",
-    value: function nextLowerCoordinate(coord) {
-      return coord == this.MIN ? this.MAX : coord - BigInt(1);
+    value: function nextLowerCoordinate(coord, multiplier) {
+      if (coord == Point.MIN) {
+        multiplier = multiplier - 1;
+        coord = Point.MAX;
+      } else {
+        coord = coord - 1;
+      }
+
+      if (multiplier <= 0) {
+        multiplier = Point.MAX_MULTIPLIER;
+      }
+
+      return [coord, multiplier];
     }
   }, {
     key: "coordinates",
     get: function get() {
-      return [this.x, this.y];
+      return Point.cacheKey(this.x, this.x_multiplier, this.y, this.y_multiplier);
     }
-  }, {
-    key: "neighborCache",
-    get: function get() {
-      return this._neighborCache;
+  }], [{
+    key: "cacheKey",
+    value: function cacheKey(x, x_multiplier, y, y_multiplier) {
+      return [x, x_multiplier, y, y_multiplier].join(':');
     }
   }]);
 
@@ -287,6 +309,10 @@ function () {
 }();
 
 exports.default = Point;
+Point.MIN = 0;
+Point.MAX = Number.MAX_SAFE_INTEGER; // 0 counts
+
+Point.MAX_MULTIPLIER = 2048; // there are 2048 of Number.MAX_SAFE_INTEGER in 2^64
 },{}],"src/cached_points.ts":[function(require,module,exports) {
 "use strict";
 
@@ -319,20 +345,14 @@ function () {
   function CachedPoints() {
     _classCallCheck(this, CachedPoints);
 
-    // We're going to use an array to hold the active points and use the slower `find` approach to pull back each item we
-    // are interested in.  The preference would be to use a hash where the key was an array of the `x` and `y` coordinates
-    // which would make lookup very snappy, however I found I cannot use an object as they key in Typescript and I cannot 
-    // serialize the larger numbers without losing percision. 
-    // If speed is important or this approach proves itself to be too slow, I would move this structure onto a language 
-    // where the map approach was possible - probably shouldve picked Ruby...
-    this.cache = [];
-    this._removed = [];
+    this.cache = {};
+    this._removed = {};
   }
 
   _createClass(CachedPoints, [{
     key: "cleanRemoved",
     value: function cleanRemoved() {
-      this._removed = [];
+      this._removed = {};
     } // add an item into the cache, has a side effect of hydrating siblings - could be more of a pure function
 
   }, {
@@ -340,44 +360,42 @@ function () {
     value: function addOrUpdate(point) {
       var _this = this;
 
-      var existingPoint = this.find(point.coordinates);
-
-      if (!existingPoint) {
-        this.cache.push(point);
-      } else {
-        existingPoint.selected = point.selected;
+      if (!this.cache[point.coordinates]) {
+        this.cache[point.coordinates] = point;
       }
 
-      point.neighbors().forEach(function (neighboringCoordinates) {
-        // if our neighbor already exists, we've nothing to do
-        if (_this.find(neighboringCoordinates)) {
+      this.cache[point.coordinates].selected = point.selected;
+      point.neighbors().forEach(function (neighborCoordinates) {
+        var _neighborCoordinates = _slicedToArray(neighborCoordinates, 2),
+            _neighborCoordinates$ = _slicedToArray(_neighborCoordinates[0], 2),
+            x = _neighborCoordinates$[0],
+            x_multiplier = _neighborCoordinates$[1],
+            _neighborCoordinates$2 = _slicedToArray(_neighborCoordinates[1], 2),
+            y = _neighborCoordinates$2[0],
+            y_multiplier = _neighborCoordinates$2[1]; // if our neighbor already exists, we've nothing to do
+
+
+        var cacheKey = _point.default.cacheKey(x, x_multiplier, y, y_multiplier);
+
+        if (_this.cache[cacheKey]) {
           return;
         }
 
-        _this.cache.push(new _point.default(neighboringCoordinates[0], neighboringCoordinates[1], false));
+        _this.cache[cacheKey] = new _point.default(x, x_multiplier, y, y_multiplier, false);
       });
-    } // safely removes an item from the cache returning `true` if it succeeds and `false` if it does not
+    } // removes an item from the cache and adds to the removed list
 
   }, {
     key: "remove",
     value: function remove(point) {
-      var indexToRemove = this.findIndexInCache(point.coordinates);
+      this.cache[point.coordinates];
 
-      if (indexToRemove == -1) {
+      if (!this.cache[point.coordinates]) {
         return false;
       }
 
-      this._removed.push(this.cache.splice(indexToRemove, 1)[0]);
-
-      return true;
-    } // get the cached item if it exists
-
-  }, {
-    key: "find",
-    value: function find(coordinates) {
-      var index = this.findIndexInCache(coordinates);
-      if (index == -1) return null;
-      return this.cache[index];
+      this._removed[point.coordinates] = point;
+      return delete this.cache[point.coordinates];
     } // find the siblings of this point and return the total number that are selected
 
   }, {
@@ -386,40 +404,35 @@ function () {
       var _this2 = this;
 
       // for performance we're going to rely on this guy being in the cache for sure
-      return point.neighbors().filter(function (coordinates) {
-        var neighboringIndex = _this2.findIndexInCache(coordinates);
+      return point.neighbors().filter(function (neighborCoordinates) {
+        var _neighborCoordinates2 = _slicedToArray(neighborCoordinates, 2),
+            _neighborCoordinates3 = _slicedToArray(_neighborCoordinates2[0], 2),
+            x = _neighborCoordinates3[0],
+            x_multiplier = _neighborCoordinates3[1],
+            _neighborCoordinates4 = _slicedToArray(_neighborCoordinates2[1], 2),
+            y = _neighborCoordinates4[0],
+            y_multiplier = _neighborCoordinates4[1];
 
-        return neighboringIndex > -1 && _this2.cache[neighboringIndex].selected;
+        var cacheKey = _point.default.cacheKey(x, x_multiplier, y, y_multiplier);
+
+        return _this2.cache[cacheKey] && _this2.cache[cacheKey].selected;
       }).length;
-    } // returns the index of the object you seek
-
-  }, {
-    key: "findIndexInCache",
-    value: function findIndexInCache(coordinates) {
-      var x;
-      var y;
-
-      var _coordinates = _slicedToArray(coordinates, 2);
-
-      x = _coordinates[0];
-      y = _coordinates[1];
-      return this.cache.findIndex(function (point) {
-        return point.coordinates[0] == x && point.coordinates[1] == y;
-      });
     }
   }, {
     key: "cached",
     get: function get() {
-      return this.cache.map(function (point) {
-        return point.coordinates;
-      });
+      return this.cache;
+    }
+  }, {
+    key: "visibleItems",
+    get: function get() {
+      // TODO hold visible ones and return them
+      return {};
     }
   }, {
     key: "removedItems",
     get: function get() {
-      return this._removed.map(function (point) {
-        return point.coordinates;
-      });
+      return this._removed;
     }
   }]);
 
@@ -512,6 +525,14 @@ require("./style.scss");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest(); }
+
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
+
+function _iterableToArrayLimit(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+
+function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
+
 var runButton = document.getElementById('run');
 var frameContainer = document.getElementById('frame');
 var inputWrapper = document.getElementById('input');
@@ -524,39 +545,57 @@ var cachedPoints = new _cached_points.default();
 var started = 0;
 
 function addPoint(coordinates, selected) {
-  var existingCachedItem = cachedPoints.find(coordinates);
-  var point;
-
-  if (existingCachedItem) {
-    existingCachedItem.selected = !existingCachedItem.selected;
-    point = existingCachedItem;
-  } else {
-    point = new _point.default(coordinates[0], coordinates[1], selected);
-  }
-
+  var point = new _point.default(coordinates[0], 1, coordinates[1], 1, selected);
   cachedPoints.addOrUpdate(point);
 } // This method determines if the UI contains any of the active points and displays them, it also serializes the cache into the textarea
 
 
-function syncUi(visibleAddedPoints, visibleRemovedPoints) {
-  visibleAddedPoints.forEach(function (point) {
-    var cell = (0, _dom_helpers.getCellFromCoordinates)(point.coordinates[0].toString(), point.coordinates[1].toString());
-    (0, _dom_helpers.selectCell)(cell);
+function syncUi(addedPoints, removedPoints) {
+  addedPoints.forEach(function (point) {
+    var _point$coordinates$sp = point.coordinates.split(':'),
+        _point$coordinates$sp2 = _slicedToArray(_point$coordinates$sp, 4),
+        x = _point$coordinates$sp2[0],
+        x_multiplier = _point$coordinates$sp2[1],
+        y = _point$coordinates$sp2[2],
+        y_multiplier = _point$coordinates$sp2[3];
+
+    var cell = (0, _dom_helpers.getCellFromCoordinates)(x.toString(), y.toString());
+
+    if (point.selected && parseInt(x) < _dom_helpers.DOM.COLS && parseInt(y) < _dom_helpers.DOM.ROWS) {
+      (0, _dom_helpers.selectCell)(cell);
+    }
   });
-  visibleRemovedPoints.forEach(function (point) {
-    var cell = (0, _dom_helpers.getCellFromCoordinates)(point.coordinates[0].toString(), point.coordinates[1].toString());
-    (0, _dom_helpers.deselectCell)(cell);
+  removedPoints.forEach(function (point) {
+    var _point$coordinates$sp3 = point.coordinates.split(':'),
+        _point$coordinates$sp4 = _slicedToArray(_point$coordinates$sp3, 4),
+        x = _point$coordinates$sp4[0],
+        x_multiplier = _point$coordinates$sp4[1],
+        y = _point$coordinates$sp4[2],
+        y_multiplier = _point$coordinates$sp4[3];
+
+    var cell = (0, _dom_helpers.getCellFromCoordinates)(x.toString(), y.toString());
+
+    if (point.selected && parseInt(x) < _dom_helpers.DOM.COLS && parseInt(y) < _dom_helpers.DOM.ROWS) {
+      (0, _dom_helpers.deselectCell)(cell);
+    }
   });
-  var selectedPoints = cachedPoints.cached.filter(function (coordinates) {
-    return cachedPoints.find(coordinates).selected;
-  }).reduce(function (accumulator, coordinates) {
-    accumulator.push([coordinates[0].toString(), coordinates[1].toString()]);
-    return accumulator;
-  }, []);
   frameContainer.innerText = (frameCount++).toString();
   runTime.innerText = (Date.now() - started).toString(); // let the user see how long things took after every 500 frames
 
   if (frameCount % 500 === 0) {
+    var selectedPoints = Object.values(cachedPoints.cached).filter(function (point) {
+      return point.selected;
+    }).reduce(function (accumulator, point) {
+      var _point$coordinates$sp5 = point.coordinates.split(':'),
+          _point$coordinates$sp6 = _slicedToArray(_point$coordinates$sp5, 4),
+          x = _point$coordinates$sp6[0],
+          x_multiplier = _point$coordinates$sp6[1],
+          y = _point$coordinates$sp6[2],
+          y_multiplier = _point$coordinates$sp6[3];
+
+      accumulator.push([x, y]);
+      return accumulator;
+    }, []);
     started = 0;
     runTime.innerText = "".concat(runTime.innerText, "ms. ").concat(cachedPoints.cached.length, " items in cache");
     currentState.querySelector('pre').innerText = JSON.stringify(selectedPoints, null, 2);
@@ -572,7 +611,7 @@ function perform() {
   var added = [];
   var removed = [];
   var surviving = [];
-  cachedPoints.cache.forEach(function (point) {
+  Object.values(cachedPoints.cached).forEach(function (point) {
     var selectedSiblings = cachedPoints.countOfSelectedSiblings(point);
 
     if (point.selected && (selectedSiblings < 2 || selectedSiblings > 3)) {
@@ -596,15 +635,7 @@ function perform() {
     return (point.selected = true) && cachedPoints.addOrUpdate(point);
   });
   cachedPoints.cleanRemoved();
-  syncUi(added.filter(function (point) {
-    var x = point.coordinates[0];
-    var y = point.coordinates[1];
-    return point.selected && x < _dom_helpers.DOM.COLS && y < _dom_helpers.DOM.ROWS;
-  }), removed.filter(function (point) {
-    var x = point.coordinates[0];
-    var y = point.coordinates[1];
-    return x < _dom_helpers.DOM.COLS && y < _dom_helpers.DOM.ROWS;
-  }));
+  syncUi(added, removed);
   setTimeout(perform, 0);
 } // Add the ability to click cells to toggle them on and off
 
@@ -661,7 +692,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "62712" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "57077" + '/');
 
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
