@@ -25,18 +25,18 @@ function addPoint(coordinates: number[], selected: boolean): void {
 function syncUi(addedPoints: Array<Point>, removedPoints: Array<Point>): void {
     addedPoints.forEach(point => {
         const [x, x_multiplier, y, y_multiplier] = point.coordinates.split(':')
-        const cell = getCellFromCoordinates(x.toString(), y.toString())
 
         if (point.selected && parseInt(x) < DOM.COLS && parseInt(y) < DOM.ROWS) {
+            const cell = getCellFromCoordinates(x.toString(), y.toString())
             selectCell(cell)
         }
     })
 
     removedPoints.forEach(point => {
         const [x, x_multiplier, y, y_multiplier] = point.coordinates.split(':')
-        const cell = getCellFromCoordinates(x.toString(), y.toString())
 
-        if (point.selected && parseInt(x) < DOM.COLS && parseInt(y) < DOM.ROWS) {
+        if (parseInt(x) < DOM.COLS && parseInt(y) < DOM.ROWS) {
+            const cell = getCellFromCoordinates(x.toString(), y.toString())
             deselectCell(cell)
         }
     })
@@ -46,17 +46,7 @@ function syncUi(addedPoints: Array<Point>, removedPoints: Array<Point>): void {
 
     // let the user see how long things took after every 500 frames
     if (frameCount % 500 === 0) {
-        const selectedPoints = Object.values(cachedPoints.cached)
-            .filter(point => point.selected)
-            .reduce((accumulator: string[][], point) => {
-                const [x, x_multiplier, y, y_multiplier] = point.coordinates.split(':')
-                accumulator.push([x, y])
-                return accumulator
-            }, [])
-
-        started = 0
-        runTime.innerText = `${runTime.innerText}ms. ${Object.keys(cachedPoints.cached).length} items in cache`
-        currentState.querySelector('pre').innerText = JSON.stringify(selectedPoints, null, 2)
+        toggle()
     }
 }
 
@@ -93,10 +83,34 @@ function perform() {
 
     added.concat(surviving).forEach(point => (point.selected = true) && cachedPoints.addOrUpdate(point))
 
-    cachedPoints.cleanRemoved()
-
     syncUi(added, removed)
 
+    setTimeout(perform, 0)
+}
+
+function toggle() {
+    // allow run button to start and stop
+    if (started > 0) {
+        runButton.innerText = 'Restart'
+        started = 0
+
+        const selectedPoints = Object.values(cachedPoints.cached)
+            .filter(point => point.selected)
+            .reduce((accumulator: string[][], point) => {
+                const [x, x_multiplier, y, y_multiplier] = point.coordinates.split(':')
+                accumulator.push([x, y])
+                return accumulator
+            }, [])
+
+        started = 0
+        runTime.innerText = `${runTime.innerText}ms. ${Object.keys(cachedPoints.cached).length} items in cache`
+        currentState.querySelector('pre').innerText = JSON.stringify(selectedPoints, null, 2)
+
+        return
+    }
+
+    started = Date.now()
+    runButton.innerText = 'Stop'
     setTimeout(perform, 0)
 }
 
@@ -106,18 +120,7 @@ inputWrapper && inputWrapper.addEventListener('click', (e) => {
     addPoint(toggleSelected(cell), cellIsSelected(cell))
 })
 
-runButton && runButton.addEventListener('click', () => {
-    // allow run button to start and stop
-    if (started > 0) {
-        runButton.innerText = 'Restart'
-        started = 0
-        return
-    }
-
-    started = Date.now()
-    runButton.innerText = 'Stop'
-    setTimeout(perform, 0)
-})
+runButton && runButton.addEventListener('click', toggle)
 
 initialState && initialState.addEventListener('change', () => {
     const newState = JSON.parse(initialState.value)

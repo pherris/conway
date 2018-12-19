@@ -2,7 +2,6 @@ import Point from "./point";
 
 export default class CachedPoints {
     cache: Record<string, Point> = {}
-    private _removed: Record<string, Point> = {}
 
     constructor() { }
 
@@ -13,14 +12,6 @@ export default class CachedPoints {
     get visibleItems(): Object {
         // TODO hold visible ones and return them
         return {}
-    }
-
-    get removedItems(): Object {
-        return this._removed
-    }
-
-    public cleanRemoved(): void {
-        this._removed = {}
     }
 
     // add an item into the cache, has a side effect of hydrating siblings - could be more of a pure function
@@ -44,15 +35,15 @@ export default class CachedPoints {
 
     // removes an item from the cache and adds to the removed list
     public remove(point: Point): boolean {
-        this.cache[point.coordinates]
+        this.cache[point.coordinates].selected = false
 
         if (!this.cache[point.coordinates]) {
             return false
         }
 
-        this._removed[point.coordinates] = point
+        return true
 
-        return delete this.cache[point.coordinates]
+        // return delete this.cache[point.coordinates]
     }
 
     // find the siblings of this point and return the total number that are selected

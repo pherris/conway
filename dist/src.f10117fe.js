@@ -351,17 +351,11 @@ function () {
     _classCallCheck(this, CachedPoints);
 
     this.cache = {};
-    this._removed = {};
   }
 
   _createClass(CachedPoints, [{
-    key: "cleanRemoved",
-    value: function cleanRemoved() {
-      this._removed = {};
-    } // add an item into the cache, has a side effect of hydrating siblings - could be more of a pure function
-
-  }, {
     key: "addOrUpdate",
+    // add an item into the cache, has a side effect of hydrating siblings - could be more of a pure function
     value: function addOrUpdate(point) {
       var _this = this;
 
@@ -391,14 +385,13 @@ function () {
   }, {
     key: "remove",
     value: function remove(point) {
-      this.cache[point.coordinates];
+      this.cache[point.coordinates].selected = false;
 
       if (!this.cache[point.coordinates]) {
         return false;
       }
 
-      this._removed[point.coordinates] = point;
-      return delete this.cache[point.coordinates];
+      return true; // return delete this.cache[point.coordinates]
     } // find the siblings of this point and return the total number that are selected
 
   }, {
@@ -422,11 +415,6 @@ function () {
     get: function get() {
       // TODO hold visible ones and return them
       return {};
-    }
-  }, {
-    key: "removedItems",
-    get: function get() {
-      return this._removed;
     }
   }]);
 
@@ -553,9 +541,8 @@ function syncUi(addedPoints, removedPoints) {
         y = _point$coordinates$sp2[2],
         y_multiplier = _point$coordinates$sp2[3];
 
-    var cell = (0, _dom_helpers.getCellFromCoordinates)(x.toString(), y.toString());
-
     if (point.selected && parseInt(x) < _dom_helpers.DOM.COLS && parseInt(y) < _dom_helpers.DOM.ROWS) {
+      var cell = (0, _dom_helpers.getCellFromCoordinates)(x.toString(), y.toString());
       (0, _dom_helpers.selectCell)(cell);
     }
   });
@@ -567,9 +554,8 @@ function syncUi(addedPoints, removedPoints) {
         y = _point$coordinates$sp4[2],
         y_multiplier = _point$coordinates$sp4[3];
 
-    var cell = (0, _dom_helpers.getCellFromCoordinates)(x.toString(), y.toString());
-
-    if (point.selected && parseInt(x) < _dom_helpers.DOM.COLS && parseInt(y) < _dom_helpers.DOM.ROWS) {
+    if (parseInt(x) < _dom_helpers.DOM.COLS && parseInt(y) < _dom_helpers.DOM.ROWS) {
+      var cell = (0, _dom_helpers.getCellFromCoordinates)(x.toString(), y.toString());
       (0, _dom_helpers.deselectCell)(cell);
     }
   });
@@ -577,22 +563,7 @@ function syncUi(addedPoints, removedPoints) {
   runTime.innerText = (Date.now() - started).toString(); // let the user see how long things took after every 500 frames
 
   if (frameCount % 500 === 0) {
-    var selectedPoints = Object.values(cachedPoints.cached).filter(function (point) {
-      return point.selected;
-    }).reduce(function (accumulator, point) {
-      var _point$coordinates$sp5 = point.coordinates.split(':'),
-          _point$coordinates$sp6 = _slicedToArray(_point$coordinates$sp5, 4),
-          x = _point$coordinates$sp6[0],
-          x_multiplier = _point$coordinates$sp6[1],
-          y = _point$coordinates$sp6[2],
-          y_multiplier = _point$coordinates$sp6[3];
-
-      accumulator.push([x, y]);
-      return accumulator;
-    }, []);
-    started = 0;
-    runTime.innerText = "".concat(runTime.innerText, "ms. ").concat(Object.keys(cachedPoints.cached).length, " items in cache");
-    currentState.querySelector('pre').innerText = JSON.stringify(selectedPoints, null, 2);
+    toggle();
   }
 }
 
@@ -628,8 +599,36 @@ function perform() {
   added.concat(surviving).forEach(function (point) {
     return (point.selected = true) && cachedPoints.addOrUpdate(point);
   });
-  cachedPoints.cleanRemoved();
   syncUi(added, removed);
+  setTimeout(perform, 0);
+}
+
+function toggle() {
+  // allow run button to start and stop
+  if (started > 0) {
+    runButton.innerText = 'Restart';
+    started = 0;
+    var selectedPoints = Object.values(cachedPoints.cached).filter(function (point) {
+      return point.selected;
+    }).reduce(function (accumulator, point) {
+      var _point$coordinates$sp5 = point.coordinates.split(':'),
+          _point$coordinates$sp6 = _slicedToArray(_point$coordinates$sp5, 4),
+          x = _point$coordinates$sp6[0],
+          x_multiplier = _point$coordinates$sp6[1],
+          y = _point$coordinates$sp6[2],
+          y_multiplier = _point$coordinates$sp6[3];
+
+      accumulator.push([x, y]);
+      return accumulator;
+    }, []);
+    started = 0;
+    runTime.innerText = "".concat(runTime.innerText, "ms. ").concat(Object.keys(cachedPoints.cached).length, " items in cache");
+    currentState.querySelector('pre').innerText = JSON.stringify(selectedPoints, null, 2);
+    return;
+  }
+
+  started = Date.now();
+  runButton.innerText = 'Stop';
   setTimeout(perform, 0);
 } // Add the ability to click cells to toggle them on and off
 
@@ -638,18 +637,7 @@ inputWrapper && inputWrapper.addEventListener('click', function (e) {
   var cell = e.srcElement;
   addPoint((0, _dom_helpers.toggleSelected)(cell), (0, _dom_helpers.cellIsSelected)(cell));
 });
-runButton && runButton.addEventListener('click', function () {
-  // allow run button to start and stop
-  if (started > 0) {
-    runButton.innerText = 'Restart';
-    started = 0;
-    return;
-  }
-
-  started = Date.now();
-  runButton.innerText = 'Stop';
-  setTimeout(perform, 0);
-});
+runButton && runButton.addEventListener('click', toggle);
 initialState && initialState.addEventListener('change', function () {
   var newState = JSON.parse(initialState.value);
   newState.forEach(function (coordinates) {
@@ -686,7 +674,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "50711" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "63404" + '/');
 
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
