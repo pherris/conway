@@ -410,12 +410,6 @@ function () {
     get: function get() {
       return this.cache;
     }
-  }, {
-    key: "visibleItems",
-    get: function get() {
-      // TODO hold visible ones and return them
-      return {};
-    }
   }]);
 
   return CachedPoints;
@@ -674,7 +668,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "63404" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58480" + '/');
 
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);

@@ -9,11 +9,6 @@ export default class CachedPoints {
         return this.cache
     }
 
-    get visibleItems(): Object {
-        // TODO hold visible ones and return them
-        return {}
-    }
-
     // add an item into the cache, has a side effect of hydrating siblings - could be more of a pure function
     public addOrUpdate(point: Point): void {
         if (!this.cache[point.coordinates]) {

@@ -2,10 +2,6 @@
 
 This is a typescript implementation transpiled to JS using Parcel (https://parceljs.org).
 
-## Update after end of deadline
-
-I think I sorted it out (in my head) - there should be enough room for the hash approach if I use positive and negative numbers between `-Number.MAX_SAFE_INTEGER` and `Number.MAX_SAFE_INTEGER` to represent the coordinates.  If we refactor to use a hash for lookups, we should solve the performance problems.  An obvious fix but I overlooked it at the time.  AR - 12/17/2018
-
 ## Install
 
 Install Parcel with:
@@ -26,13 +22,24 @@ Tests:
 
 `yarn test`
 
-## Performance
+## Implementation
 
-This implementation ultimately is not suitable for as large a galaxy as implemented (assuming patterns that create a virtually unbounded number of selected squares).  The performance of this application degrades in exponentially in relationship to the number of objects created.  Moving to a hashed lookup would improve performance greatly.
+Each `Point` object is aware of:
+ - its coordinates
+ - weather or not it is `selected`
+ - its neighbor's coordinates 
 
-UPDATE: moving to a hash lookup improved performance, however the implementation seems to still be lacking due to degredated performance over time... a longer time to be sure, but still degrades and would be impractical to run for any length of time.
+`CachedPoints` holds a lookup Object who's keys are the coordinates of the `Point`s & values are the `Point`s themselves.
 
-Benchmarking
+`index.ts` is the entry point for the application, bridging (and creating) the DOM with the cache logic:
+
+ - `addPoint` adds a point with initial state to the cache.
+ - `syncUi` updates the DOM's representation of the current state of the Universe.  Every 500 frames the application pauses to allow for examination.
+ - `perform` implements the rules of the game & is recursively called as quickly as possible using a `setTimeout` with no delay.
+
+ `*_spec.ts` hold some basic tests run with `karma` and `karma-jasmine`
+
+## Benchmarking
 
 - 500 frames, 62839ms
 - optimization 1 (use raw list in perform method)
@@ -43,3 +50,5 @@ Benchmarking
 - 500 frames, 57464ms
 - Moved to the hash lookup
 - 500 frames, 9750ms
+- Moved to leaving items in lookup hash, smarter about when to query for DOM nodes
+- 500 frames, 7073ms

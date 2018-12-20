@@ -30,16 +30,4 @@ describe("ActivePoints", () => {
         cache.addOrUpdate(point3)
         expect(cache.countOfSelectedSiblings(point)).toBe(2)
     });
-
-    it("cleanRemoved removes the cache of removed items", () => {
-        const cache = new CachedPoints()
-        const point = new Point(0, 1, 0, 1, true)
-        cache.addOrUpdate(point)
-        expect(Object.keys(cache.cached).length).toBe(9)
-        cache.remove(point)
-        expect(Object.keys(cache.cached).length).toBe(8)
-        expect(Object.keys(cache.removedItems).length).toBe(1)
-        cache.cleanRemoved()
-        expect(Object.keys(cache.removedItems).length).toBe(0)
-    });
 });
