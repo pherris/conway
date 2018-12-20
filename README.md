@@ -26,7 +26,7 @@ Tests:
 
 Each `Point` object is aware of:
  - its coordinates
- - weather or not it is `selected`
+ - wheather or not it is `selected`
  - its neighbor's coordinates 
 
 `CachedPoints` holds a lookup Object who's keys are the coordinates of the `Point`s & values are the `Point`s themselves.
@@ -39,7 +39,7 @@ Each `Point` object is aware of:
 
  `*_spec.ts` hold some basic tests run with `karma` and `karma-jasmine`
 
-## Benchmarking
+## Benchmarking History
 
 - 500 frames, 62839ms
 - optimization 1 (use raw list in perform method)
@@ -50,5 +50,7 @@ Each `Point` object is aware of:
 - 500 frames, 57464ms
 - Moved to the hash lookup
 - 500 frames, 9750ms
-- Moved to leaving items in lookup hash, smarter about when to query for DOM nodes
+- Leave items in lookup hash, smarter about when to query for DOM nodes
 - 500 frames, 7073ms
+
+![Performance Profile](https://raw.githubusercontent.com/pherris/conway/master/profile.png)
